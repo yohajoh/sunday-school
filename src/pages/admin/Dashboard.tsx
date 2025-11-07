@@ -1,31 +1,41 @@
+import { useState } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, Package, FileText, TrendingUp } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 export default function Dashboard() {
+  const { t } = useLanguage();
+  const [selectedActivity, setSelectedActivity] = useState<any>(null);
   const stats = [
     {
-      title: 'Total Users',
+      title: t('dashboard.totalUsers'),
       value: '234',
       icon: Users,
       trend: '+12%',
       color: 'text-secondary',
     },
     {
-      title: 'Total Assets',
+      title: t('dashboard.totalAssets'),
       value: '89',
       icon: Package,
       trend: '+5%',
-      color: 'text-primary',
+      color: 'text-secondary',
     },
     {
-      title: 'Active Posts',
+      title: t('dashboard.activePosts'),
       value: '45',
       icon: FileText,
       trend: '+8%',
       color: 'text-accent',
     },
     {
-      title: 'Engagement Rate',
+      title: t('dashboard.engagement'),
       value: '87%',
       icon: TrendingUp,
       trend: '+3%',
@@ -33,12 +43,18 @@ export default function Dashboard() {
     },
   ];
 
+  const activities = [
+    { id: 1, action: 'New user registered', user: 'John Doe', email: 'john@church.org', time: '2 hours ago', details: 'Completed registration with all required information.' },
+    { id: 2, action: 'Asset updated', user: 'Admin', email: 'admin@church.org', time: '5 hours ago', details: 'Updated asset BK-001 status to Available.' },
+    { id: 3, action: 'New post published', user: 'Admin', email: 'admin@church.org', time: '1 day ago', details: 'Published "Welcome to Sunday School Portal"' },
+  ];
+
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold">Dashboard</h1>
+        <h1 className="text-3xl font-bold">{t('nav.dashboard')}</h1>
         <p className="text-muted-foreground mt-2">
-          Overview of your Sunday School management system
+          {t('dashboard.overview')}
         </p>
       </div>
 
@@ -65,16 +81,16 @@ export default function Dashboard() {
       {/* Recent Activity */}
       <Card className="eotc-card">
         <CardHeader>
-          <CardTitle>Recent Activity</CardTitle>
+          <CardTitle>{t('dashboard.recentActivity')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {[
-              { action: 'New user registered', user: 'John Doe', time: '2 hours ago' },
-              { action: 'Asset updated', user: 'Admin', time: '5 hours ago' },
-              { action: 'New post published', user: 'Admin', time: '1 day ago' },
-            ].map((activity, i) => (
-              <div key={i} className="flex items-center justify-between py-3 border-b last:border-0">
+            {activities.map((activity) => (
+              <div 
+                key={activity.id} 
+                className="flex items-center justify-between py-3 border-b last:border-0 cursor-pointer hover:bg-muted/50 px-2 rounded transition-colors"
+                onClick={() => setSelectedActivity(activity)}
+              >
                 <div>
                   <p className="font-medium">{activity.action}</p>
                   <p className="text-sm text-muted-foreground">{activity.user}</p>
@@ -85,6 +101,39 @@ export default function Dashboard() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Activity Detail Modal */}
+      <Dialog open={!!selectedActivity} onOpenChange={() => setSelectedActivity(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Activity Details</DialogTitle>
+          </DialogHeader>
+          {selectedActivity && (
+            <div className="space-y-4 py-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Action</p>
+                <p className="font-medium">{selectedActivity.action}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">User</p>
+                <p className="font-medium">{selectedActivity.user}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Email</p>
+                <p className="font-medium">{selectedActivity.email}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Time</p>
+                <p className="font-medium">{selectedActivity.time}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Details</p>
+                <p className="font-medium">{selectedActivity.details}</p>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

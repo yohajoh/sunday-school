@@ -29,10 +29,6 @@ export const AdminHeader = () => {
           </div>
           <LanguageSwitcher />
           <ThemeToggle />
-          <Button variant="outline" size="sm" onClick={handleLogout}>
-            <LogOut className="h-4 w-4 mr-2" />
-            Logout
-          </Button>
         </div>
       </div>
     </header>

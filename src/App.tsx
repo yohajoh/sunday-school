@@ -11,6 +11,8 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Dashboard from "./pages/admin/Dashboard";
 import Users from "./pages/admin/Users";
+import Assets from "./pages/admin/Assets";
+import Posts from "./pages/admin/Posts";
 import WhatsNew from "./pages/WhatsNew";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
@@ -38,8 +40,8 @@ const App = () => (
               }>
                 <Route path="dashboard" element={<Dashboard />} />
                 <Route path="users" element={<Users />} />
-                <Route path="assets" element={<div className="text-2xl">Assets Page (Coming Soon)</div>} />
-                <Route path="posts" element={<div className="text-2xl">Posts Page (Coming Soon)</div>} />
+                <Route path="assets" element={<Assets />} />
+                <Route path="posts" element={<Posts />} />
               </Route>
 
               {/* User Routes */}
