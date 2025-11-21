@@ -137,7 +137,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
             onClick={onClose}
             className="h-8 w-8 hover:bg-white dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-600 shadow-sm rounded-xl"
           >
-            <X className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+            {/* <X className="h-4 w-4 text-slate-600 dark:text-slate-400" /> */}
           </Button>
         ) : (
           <Button
