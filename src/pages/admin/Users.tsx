@@ -183,7 +183,7 @@ export const Users: React.FC = () => {
       try {
         const res = await fetch(`${API}/api/sunday-school/users`);
         const data = await res.json();
-        console.log(data);
+        console.log(data.data);
         setUsers(data.data.data);
       } catch (err) {
         console.log("Error:", err);
