@@ -51,7 +51,6 @@ import Spinner from "@/components/shared/Spinner";
 
 export const Users: React.FC = () => {
   const { t } = useLanguage();
-  // const { deleteUser, currentUser } = useApp();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -95,7 +94,7 @@ export const Users: React.FC = () => {
     setSortConfig({ key, direction });
   };
 
-  const sortedUsers = [...userData].sort((a, b) => {
+  const sortedUsers = [...(userData || [])].sort((a, b) => {
     if (!sortConfig) return 0;
 
     const aValue = a[sortConfig.key];
