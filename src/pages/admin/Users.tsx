@@ -60,6 +60,9 @@ export const Users: React.FC = () => {
     direction: "asc" | "desc";
   } | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [viewUser, setViewUser] = useState<User | null>(null);
+  const [editUser, setEditUser] = useState<User | null>(null);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
   const API = import.meta.env.VITE_API_URL;
 
@@ -78,9 +81,8 @@ export const Users: React.FC = () => {
     gcTime: 1000 * 60 * 60,
   });
 
-  const [viewUser, setViewUser] = useState<User | null>(null);
-  const [editUser, setEditUser] = useState<User | null>(null);
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  // Simple safety check
+  const safeUserData = userData || [];
 
   const handleSort = (key: keyof User) => {
     let direction: "asc" | "desc" = "asc";
@@ -94,35 +96,31 @@ export const Users: React.FC = () => {
     setSortConfig({ key, direction });
   };
 
-  const sortedUsers = (Array.isArray(userData) ? [...userData] : []).sort(
-    (a, b) => {
-      if (!sortConfig) return 0;
+  const sortedUsers = [...safeUserData].sort((a, b) => {
+    if (!sortConfig) return 0;
 
-      const aValue = a[sortConfig.key];
-      const bValue = b[sortConfig.key];
+    const aValue = a[sortConfig.key];
+    const bValue = b[sortConfig.key];
 
-      if (aValue < bValue) return sortConfig.direction === "asc" ? -1 : 1;
-      if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1;
-      return 0;
-    }
-  );
+    if (aValue < bValue) return sortConfig.direction === "asc" ? -1 : 1;
+    if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1;
+    return 0;
+  });
 
-  const filteredUsers = (Array.isArray(sortedUsers) ? sortedUsers : []).filter(
-    (user) => {
-      const matchesSearch =
-        user?.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user?.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user?.studentId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user?.phoneNumber?.includes(searchTerm);
+  const filteredUsers = sortedUsers.filter((user) => {
+    const matchesSearch =
+      user?.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user?.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user?.studentId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user?.phoneNumber?.includes(searchTerm);
 
-      const matchesStatus =
-        statusFilter === "all" || user.status === statusFilter;
-      const matchesRole = roleFilter === "all" || user.role === roleFilter;
+    const matchesStatus =
+      statusFilter === "all" || user.status === statusFilter;
+    const matchesRole = roleFilter === "all" || user.role === roleFilter;
 
-      return matchesSearch && matchesStatus && matchesRole;
-    }
-  );
+    return matchesSearch && matchesStatus && matchesRole;
+  });
 
   const toggleSelectAll = () => {
     if (selectedUsers.length === filteredUsers.length) {
@@ -223,7 +221,7 @@ export const Users: React.FC = () => {
                     <Shield className="h-4 w-4 sm:h-6 sm:w-6 text-blue-400 flex-shrink-0" />
                     <div className="min-w-0">
                       <p className="text-lg sm:text-2xl font-bold truncate">
-                        {userData?.length}
+                        {isLoading ? "-" : safeUserData.length || 0}
                       </p>
                       <p className="text-xs text-blue-200 truncate">
                         {t("dashboard.totalUsers")}
@@ -234,10 +232,11 @@ export const Users: React.FC = () => {
                     <Zap className="h-4 w-4 sm:h-6 sm:w-6 text-violet-400 flex-shrink-0" />
                     <div className="min-w-0">
                       <p className="text-lg sm:text-2xl font-bold truncate">
-                        {
-                          userData?.filter((u: User) => u.status === "active")
-                            .length
-                        }
+                        {isLoading
+                          ? "-"
+                          : safeUserData.filter(
+                              (u: User) => u.status === "active"
+                            ).length || 0}
                       </p>
                       <p className="text-xs text-violet-200 truncate">
                         {t("common.active")}
@@ -248,10 +247,10 @@ export const Users: React.FC = () => {
                     <Sparkles className="h-4 w-4 sm:h-6 sm:w-6 text-emerald-400 flex-shrink-0" />
                     <div className="min-w-0">
                       <p className="text-lg sm:text-2xl font-bold truncate">
-                        {
-                          userData?.filter((u: User) => u.role === "admin")
-                            .length
-                        }
+                        {isLoading
+                          ? "-"
+                          : safeUserData.filter((u: User) => u.role === "admin")
+                              .length || 0}
                       </p>
                       <p className="text-xs text-emerald-200 truncate">
                         {t("users.admins")}
@@ -353,7 +352,7 @@ export const Users: React.FC = () => {
           <div className="flex gap-3">
             <Button
               variant="outline"
-              onClick={() => exportUsers(filteredUsers)}
+              onClick={() => exportUsers(filteredUsers || [])}
               className="flex items-center gap-2 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 flex-1 sm:flex-none"
             >
               <Download className="h-4 w-4" />
@@ -593,7 +592,7 @@ export const Users: React.FC = () => {
         </div>
 
         {/* Premium Empty State (Keep this outside the table for global empty state) */}
-        {userData?.length === 0 && !isLoading && (
+        {safeUserData && safeUserData.length === 0 && !isLoading && (
           <div className="text-center py-12 sm:py-16">
             <div className="p-3 sm:p-4 bg-gradient-to-br from-blue-500/10 to-violet-500/10 rounded-2xl w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 flex items-center justify-center">
               <UsersIcon className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600 dark:text-blue-400" />
