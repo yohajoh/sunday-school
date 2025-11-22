@@ -129,9 +129,7 @@ export const Posts: React.FC = () => {
 
     selectedPosts.forEach((id) => deletePost(id));
     setSelectedPosts([]);
-    toast.success(
-      t("posts.deletedSuccess", { count: selectedPosts.length.toString() })
-    );
+    toast.success(t("posts.deletedSuccess"));
   };
 
   const handleDeletePost = (post: Post) => {
