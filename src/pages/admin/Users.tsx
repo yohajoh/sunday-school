@@ -443,11 +443,23 @@ export const Users: React.FC = () => {
                 </TableHead>
               </TableRow>
             </TableHeader>
+
             {isLoading ? (
-              <div className="flex flex-col flex-1 items-center space-y-2 p-10 m-auto">
-                <Spinner className="h-6 w-6 text-indigo-600" />
-                <p className="text-sm text-muted-foreground">Loading data...</p>
-              </div>
+              <TableBody>
+                <TableRow className="hover:bg-transparent">
+                  <TableCell
+                    colSpan={8} // Critical: Span all 8 columns
+                    className="h-64 text-center bg-white dark:bg-slate-800"
+                  >
+                    <div className="flex flex-col items-center justify-center h-full w-full space-y-3">
+                      <Spinner className="h-8 w-8 text-indigo-600" />
+                      <p className="text-base font-medium text-muted-foreground">
+                        Loading user data...
+                      </p>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              </TableBody>
             ) : (
               <TableBody>
                 {filteredUsers.map((user) => (
@@ -556,13 +568,26 @@ export const Users: React.FC = () => {
                     </TableCell>
                   </TableRow>
                 ))}
+
+                {/* Fallback for when loading is done but filteredUsers is empty */}
+                {!isLoading && filteredUsers.length === 0 && (
+                  <TableRow>
+                    <TableCell
+                      colSpan={8}
+                      className="h-24 text-center text-muted-foreground"
+                    >
+                      No user records found matching your current search or
+                      filters.
+                    </TableCell>
+                  </TableRow>
+                )}
               </TableBody>
             )}
           </Table>
         </div>
 
-        {/* Premium Empty State */}
-        {data?.length === 0 && (
+        {/* Premium Empty State (Keep this outside the table for global empty state) */}
+        {data?.length === 0 && !isLoading && (
           <div className="text-center py-12 sm:py-16">
             <div className="p-3 sm:p-4 bg-gradient-to-br from-blue-500/10 to-violet-500/10 rounded-2xl w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 flex items-center justify-center">
               <UsersIcon className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600 dark:text-blue-400" />
