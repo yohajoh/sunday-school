@@ -66,23 +66,21 @@ export const Users: React.FC = () => {
 
   const API = import.meta.env.VITE_API_URL;
 
-  const { data: userData = [], isLoading } = useQuery({
+  const { data: userData, isLoading } = useQuery({
     queryKey: ["users"],
     queryFn: async function fetchUsers() {
       try {
         const res = await fetch(`${API}/api/sunday-school/users`);
         const data = await res.json();
-        return data.data;
+        return data.data || []; // Ensure we always return an array
       } catch (err) {
         console.log("Error:", err);
+        return []; // Return empty array on error
       }
     },
     staleTime: 1000 * 60 + 5,
     gcTime: 1000 * 60 * 60,
   });
-
-  // Simple safety check
-  const safeUserData = userData || [];
 
   const handleSort = (key: keyof User) => {
     let direction: "asc" | "desc" = "asc";
@@ -96,31 +94,36 @@ export const Users: React.FC = () => {
     setSortConfig({ key, direction });
   };
 
-  const sortedUsers = (userData || []).sort((a, b) => {
-    if (!sortConfig) return 0;
+  const sortedUsers = React.useMemo(() => {
+    const data = userData || [];
+    return [...data].sort((a, b) => {
+      if (!sortConfig) return 0;
 
-    const aValue = a[sortConfig.key];
-    const bValue = b[sortConfig.key];
+      const aValue = a[sortConfig.key];
+      const bValue = b[sortConfig.key];
 
-    if (aValue < bValue) return sortConfig.direction === "asc" ? -1 : 1;
-    if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1;
-    return 0;
-  });
+      if (aValue < bValue) return sortConfig.direction === "asc" ? -1 : 1;
+      if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1;
+      return 0;
+    });
+  }, [userData, sortConfig]);
 
-  const filteredUsers = sortedUsers.filter((user) => {
-    const matchesSearch =
-      user?.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user?.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user?.studentId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user?.phoneNumber?.includes(searchTerm);
+  const filteredUsers = React.useMemo(() => {
+    return sortedUsers.filter((user) => {
+      const matchesSearch =
+        user?.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user?.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user?.studentId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user?.phoneNumber?.includes(searchTerm);
 
-    const matchesStatus =
-      statusFilter === "all" || user.status === statusFilter;
-    const matchesRole = roleFilter === "all" || user.role === roleFilter;
+      const matchesStatus =
+        statusFilter === "all" || user.status === statusFilter;
+      const matchesRole = roleFilter === "all" || user.role === roleFilter;
 
-    return matchesSearch && matchesStatus && matchesRole;
-  });
+      return matchesSearch && matchesStatus && matchesRole;
+    });
+  }, [sortedUsers, searchTerm, statusFilter, roleFilter]);
 
   const toggleSelectAll = () => {
     if (selectedUsers.length === filteredUsers.length) {
@@ -221,7 +224,7 @@ export const Users: React.FC = () => {
                     <Shield className="h-4 w-4 sm:h-6 sm:w-6 text-blue-400 flex-shrink-0" />
                     <div className="min-w-0">
                       <p className="text-lg sm:text-2xl font-bold truncate">
-                        {isLoading ? "-" : safeUserData.length || 0}
+                        {isLoading ? "-" : filteredUsers.length || 0}
                       </p>
                       <p className="text-xs text-blue-200 truncate">
                         {t("dashboard.totalUsers")}
@@ -234,7 +237,7 @@ export const Users: React.FC = () => {
                       <p className="text-lg sm:text-2xl font-bold truncate">
                         {isLoading
                           ? "-"
-                          : safeUserData.filter(
+                          : filteredUsers.filter(
                               (u: User) => u.status === "active"
                             ).length || 0}
                       </p>
@@ -249,8 +252,9 @@ export const Users: React.FC = () => {
                       <p className="text-lg sm:text-2xl font-bold truncate">
                         {isLoading
                           ? "-"
-                          : safeUserData.filter((u: User) => u.role === "admin")
-                              .length || 0}
+                          : filteredUsers.filter(
+                              (u: User) => u.role === "admin"
+                            ).length || 0}
                       </p>
                       <p className="text-xs text-emerald-200 truncate">
                         {t("users.admins")}
@@ -592,7 +596,7 @@ export const Users: React.FC = () => {
         </div>
 
         {/* Premium Empty State (Keep this outside the table for global empty state) */}
-        {safeUserData && safeUserData.length === 0 && !isLoading && (
+        {filteredUsers && filteredUsers.length === 0 && !isLoading && (
           <div className="text-center py-12 sm:py-16">
             <div className="p-3 sm:p-4 bg-gradient-to-br from-blue-500/10 to-violet-500/10 rounded-2xl w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 flex items-center justify-center">
               <UsersIcon className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600 dark:text-blue-400" />
