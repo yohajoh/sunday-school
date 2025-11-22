@@ -65,6 +65,7 @@ export const Users: React.FC = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
   const API = import.meta.env.VITE_API_URL;
+  console.log(API);
 
   const {
     data: userData,
@@ -79,7 +80,7 @@ export const Users: React.FC = () => {
           throw new Error(`HTTP error! status: ${res.status}`);
         }
         const data = await res.json();
-        return Array.isArray(data?.data) ? data.data : []; // Ensure we always return an array
+        return data.data.data; // Ensure we always return an array
       } catch (err) {
         console.error("Error fetching users:", err);
         toast.error("Failed to load users");
@@ -592,19 +593,6 @@ export const Users: React.FC = () => {
                     </TableCell>
                   </TableRow>
                 ))}
-
-                {/* Fallback for when loading is done but filteredUsers is empty */}
-                {!isLoading && filteredUsers.length === 0 && (
-                  <TableRow>
-                    <TableCell
-                      colSpan={8}
-                      className="h-24 text-center text-muted-foreground"
-                    >
-                      No user records found matching your current search or
-                      filters.
-                    </TableCell>
-                  </TableRow>
-                )}
               </TableBody>
             )}
           </Table>
