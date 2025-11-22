@@ -66,21 +66,34 @@ export const Users: React.FC = () => {
 
   const API = import.meta.env.VITE_API_URL;
 
-  const { data: userData, isLoading } = useQuery({
+  const {
+    data: userData,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ["users"],
     queryFn: async function fetchUsers() {
       try {
         const res = await fetch(`${API}/api/sunday-school/users`);
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
         const data = await res.json();
-        return data.data || []; // Ensure we always return an array
+        return Array.isArray(data?.data) ? data.data : []; // Ensure we always return an array
       } catch (err) {
-        console.log("Error:", err);
+        console.error("Error fetching users:", err);
+        toast.error("Failed to load users");
         return []; // Return empty array on error
       }
     },
     staleTime: 1000 * 60 + 5,
     gcTime: 1000 * 60 * 60,
   });
+
+  // Safe data access - ensure userData is always an array
+  const safeUserData = React.useMemo(() => {
+    return Array.isArray(userData) ? userData : [];
+  }, [userData]);
 
   const handleSort = (key: keyof User) => {
     let direction: "asc" | "desc" = "asc";
@@ -95,21 +108,35 @@ export const Users: React.FC = () => {
   };
 
   const sortedUsers = React.useMemo(() => {
-    const data = userData || [];
-    return [...data].sort((a, b) => {
-      if (!sortConfig) return 0;
+    if (!sortConfig) return safeUserData;
 
+    return [...safeUserData].sort((a, b) => {
       const aValue = a[sortConfig.key];
       const bValue = b[sortConfig.key];
 
+      // Handle null/undefined values
+      if (aValue == null && bValue == null) return 0;
+      if (aValue == null) return sortConfig.direction === "asc" ? -1 : 1;
+      if (bValue == null) return sortConfig.direction === "asc" ? 1 : -1;
+
+      // Handle string comparison
+      if (typeof aValue === "string" && typeof bValue === "string") {
+        return sortConfig.direction === "asc"
+          ? aValue.localeCompare(bValue)
+          : bValue.localeCompare(aValue);
+      }
+
+      // Handle number comparison
       if (aValue < bValue) return sortConfig.direction === "asc" ? -1 : 1;
       if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1;
       return 0;
     });
-  }, [userData, sortConfig]);
+  }, [safeUserData, sortConfig]);
 
   const filteredUsers = React.useMemo(() => {
     return sortedUsers.filter((user) => {
+      if (!user || typeof user !== "object") return false;
+
       const matchesSearch =
         user?.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user?.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -129,7 +156,7 @@ export const Users: React.FC = () => {
     if (selectedUsers.length === filteredUsers.length) {
       setSelectedUsers([]);
     } else {
-      setSelectedUsers(filteredUsers.map((u) => u.id));
+      setSelectedUsers(filteredUsers.map((u) => u.id).filter(Boolean));
     }
   };
 
@@ -138,33 +165,6 @@ export const Users: React.FC = () => {
       prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
     );
   };
-
-  // const handleDeleteSelected = () => {
-  //   if (selectedUsers.length === 0) {
-  //     toast.error(t("users.noUsersSelected"));
-  //     return;
-  //   }
-
-  //   // Prevent deleting own account
-  //   if (selectedUsers.includes(currentUser?.id || "")) {
-  //     toast.error(t("users.cannotDeleteOwnAccount"));
-  //     return;
-  //   }
-
-  //   selectedUsers.forEach((id) => deleteUser(id));
-  //   setSelectedUsers([]);
-  //   toast.success(t("users.deletedSuccess"));
-  // };
-
-  // const handleDeleteUser = (user: User) => {
-  //   if (user.id === currentUser?.id) {
-  //     toast.error(t("users.cannotDeleteOwnAccount"));
-  //     return;
-  //   }
-
-  //   deleteUser(user.id);
-  //   toast.success(t("users.userDeleted"));
-  // };
 
   const handleUserSave = (user: User) => {
     setEditUser(null);
@@ -196,6 +196,22 @@ export const Users: React.FC = () => {
     }
   };
 
+  // Show error state
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="text-red-500 text-lg font-semibold mb-2">
+            Failed to load users
+          </div>
+          <Button onClick={() => window.location.reload()} variant="outline">
+            Retry
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 ">
       {/* Premium Header Section */}
@@ -224,7 +240,7 @@ export const Users: React.FC = () => {
                     <Shield className="h-4 w-4 sm:h-6 sm:w-6 text-blue-400 flex-shrink-0" />
                     <div className="min-w-0">
                       <p className="text-lg sm:text-2xl font-bold truncate">
-                        {isLoading ? "-" : filteredUsers.length || 0}
+                        {isLoading ? "-" : safeUserData.length || 0}
                       </p>
                       <p className="text-xs text-blue-200 truncate">
                         {t("dashboard.totalUsers")}
@@ -237,7 +253,7 @@ export const Users: React.FC = () => {
                       <p className="text-lg sm:text-2xl font-bold truncate">
                         {isLoading
                           ? "-"
-                          : filteredUsers.filter(
+                          : safeUserData.filter(
                               (u: User) => u.status === "active"
                             ).length || 0}
                       </p>
@@ -252,9 +268,8 @@ export const Users: React.FC = () => {
                       <p className="text-lg sm:text-2xl font-bold truncate">
                         {isLoading
                           ? "-"
-                          : filteredUsers.filter(
-                              (u: User) => u.role === "admin"
-                            ).length || 0}
+                          : safeUserData.filter((u: User) => u.role === "admin")
+                              .length || 0}
                       </p>
                       <p className="text-xs text-emerald-200 truncate">
                         {t("users.admins")}
@@ -457,7 +472,7 @@ export const Users: React.FC = () => {
               <TableBody>
                 <TableRow className="hover:bg-transparent">
                   <TableCell
-                    colSpan={8} // Critical: Span all 8 columns
+                    colSpan={8}
                     className="h-64 text-center bg-white dark:bg-slate-800"
                   >
                     <div className="flex flex-col items-center justify-center h-full w-full space-y-3">
@@ -473,7 +488,7 @@ export const Users: React.FC = () => {
               <TableBody>
                 {filteredUsers.map((user) => (
                   <TableRow
-                    key={user.email}
+                    key={user.id || user.email}
                     className="border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-all duration-300 group"
                   >
                     <TableCell className="py-4 px-2 sm:px-4">
@@ -529,7 +544,7 @@ export const Users: React.FC = () => {
                             user.role
                           )}`}
                         >
-                          {user.role.toUpperCase()}
+                          {user.role?.toUpperCase()}
                         </Badge>
                       </div>
                     </TableCell>
@@ -595,8 +610,8 @@ export const Users: React.FC = () => {
           </Table>
         </div>
 
-        {/* Premium Empty State (Keep this outside the table for global empty state) */}
-        {filteredUsers && filteredUsers.length === 0 && !isLoading && (
+        {/* Premium Empty State */}
+        {filteredUsers.length === 0 && !isLoading && (
           <div className="text-center py-12 sm:py-16">
             <div className="p-3 sm:p-4 bg-gradient-to-br from-blue-500/10 to-violet-500/10 rounded-2xl w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 flex items-center justify-center">
               <UsersIcon className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600 dark:text-blue-400" />
@@ -639,7 +654,7 @@ export const Users: React.FC = () => {
                       {viewUser.firstName} {viewUser.lastName}
                     </h3>
                     <p className="text-slate-600 dark:text-slate-400 text-sm sm:text-base truncate">
-                      {viewUser.studentId} • {viewUser.role.toUpperCase()}
+                      {viewUser.studentId} • {viewUser.role?.toUpperCase()}
                     </p>
                   </div>
                 </div>
@@ -677,7 +692,9 @@ export const Users: React.FC = () => {
                       {t("profile.joined")}
                     </Label>
                     <p className="text-sm sm:text-base text-slate-800 dark:text-white font-semibold truncate">
-                      {new Date(viewUser.joinDate).toLocaleDateString()}
+                      {viewUser.joinDate
+                        ? new Date(viewUser.joinDate).toLocaleDateString()
+                        : "N/A"}
                     </p>
                   </div>
                 </div>
@@ -688,14 +705,14 @@ export const Users: React.FC = () => {
                       viewUser.status
                     )}`}
                   >
-                    {viewUser.status.toUpperCase()}
+                    {viewUser.status?.toUpperCase()}
                   </Badge>
                   <Badge
                     className={`text-xs truncate ${getRoleColor(
                       viewUser.role
                     )}`}
                   >
-                    {viewUser.role.toUpperCase()}
+                    {viewUser.role?.toUpperCase()}
                   </Badge>
                 </div>
               </div>
