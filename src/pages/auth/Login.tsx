@@ -69,7 +69,7 @@ export const Login: React.FC = () => {
     <div className="min-h-screen flex flex-col lg:flex-row">
       {/* Left Side - Login Form */}
 
-      <div className="flex-1 flex flex-col gap-20 p-4 lg:p-8 bg-gradient-to-br from-amber-50 via-orange-50/30 to-rose-50/50 dark:from-slate-900 dark:via-amber-950/20 dark:to-rose-950/10">
+      <div className="flex-1 flex flex-col gap-4 p-4 lg:p-8 bg-gradient-to-br from-amber-50 via-orange-50/30 to-rose-50/50 dark:from-slate-900 dark:via-amber-950/20 dark:to-rose-950/10 lg:gap-20">
         <div className="flex items-center gap-1 justify-end">
           <LanguageSwitcher />
           <ThemeToggle />
