@@ -107,20 +107,22 @@ export const Users: React.FC = () => {
     }
   );
 
-  const filteredUsers = sortedUsers?.filter((user) => {
-    const matchesSearch =
-      user?.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user?.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user?.studentId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user?.phoneNumber?.includes(searchTerm);
+  const filteredUsers = (Array.isArray(sortedUsers) ? sortedUsers : []).filter(
+    (user) => {
+      const matchesSearch =
+        user?.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user?.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user?.studentId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user?.phoneNumber?.includes(searchTerm);
 
-    const matchesStatus =
-      statusFilter === "all" || user.status === statusFilter;
-    const matchesRole = roleFilter === "all" || user.role === roleFilter;
+      const matchesStatus =
+        statusFilter === "all" || user.status === statusFilter;
+      const matchesRole = roleFilter === "all" || user.role === roleFilter;
 
-    return matchesSearch && matchesStatus && matchesRole;
-  });
+      return matchesSearch && matchesStatus && matchesRole;
+    }
+  );
 
   const toggleSelectAll = () => {
     if (selectedUsers.length === filteredUsers.length) {
