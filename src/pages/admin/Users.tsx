@@ -444,7 +444,7 @@ export const Users: React.FC = () => {
               </TableRow>
             </TableHeader>
             {isLoading ? (
-              <div className="flex flex-col items-center space-y-2 p-10">
+              <div className="flex flex-col items-center space-y-2 p-10 w-full">
                 <Spinner className="h-6 w-6 text-indigo-600" />
                 <p className="text-sm text-muted-foreground">Loading data...</p>
               </div>
