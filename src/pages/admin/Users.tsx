@@ -66,22 +66,34 @@ export const Users: React.FC = () => {
 
   const API = import.meta.env.VITE_API_URL;
 
-  const { data: userData, isLoading } = useQuery({
+  const {
+    data: userData,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ["users"],
     queryFn: async function fetchUsers() {
       try {
         const res = await fetch(`${API}/api/sunday-school/users`);
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
         const data = await res.json();
-        // Ensure we always return an array and handle potential non-iterable data
-        return Array.isArray(data?.data) ? data.data : [];
+        return Array.isArray(data?.data) ? data.data : []; // Ensure we always return an array
       } catch (err) {
-        console.log("Error:", err);
+        console.error("Error fetching users:", err);
+        toast.error("Failed to load users");
         return []; // Return empty array on error
       }
     },
     staleTime: 1000 * 60 + 5,
     gcTime: 1000 * 60 * 60,
   });
+
+  // Safe data access - ensure userData is always an array
+  const safeUserData = React.useMemo(() => {
+    return Array.isArray(userData) ? userData : [];
+  }, [userData]);
 
   const handleSort = (key: keyof User) => {
     let direction: "asc" | "desc" = "asc";
@@ -95,12 +107,10 @@ export const Users: React.FC = () => {
     setSortConfig({ key, direction });
   };
 
-  // Get sorted users without useMemo
-  const getSortedUsers = () => {
-    const data = Array.isArray(userData) ? userData : [];
-    if (!sortConfig) return data;
+  const sortedUsers = React.useMemo(() => {
+    if (!sortConfig) return safeUserData;
 
-    return [...data].sort((a, b) => {
+    return [...safeUserData].sort((a, b) => {
       const aValue = a[sortConfig.key];
       const bValue = b[sortConfig.key];
 
@@ -121,11 +131,9 @@ export const Users: React.FC = () => {
       if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1;
       return 0;
     });
-  };
+  }, [safeUserData, sortConfig]);
 
-  // Get filtered users without useMemo
-  const getFilteredUsers = () => {
-    const sortedUsers = getSortedUsers();
+  const filteredUsers = React.useMemo(() => {
     return sortedUsers.filter((user) => {
       if (!user || typeof user !== "object") return false;
 
@@ -142,10 +150,7 @@ export const Users: React.FC = () => {
 
       return matchesSearch && matchesStatus && matchesRole;
     });
-  };
-
-  const filteredUsers = getFilteredUsers();
-  const sortedUsers = getSortedUsers();
+  }, [sortedUsers, searchTerm, statusFilter, roleFilter]);
 
   const toggleSelectAll = () => {
     if (selectedUsers.length === filteredUsers.length) {
@@ -191,6 +196,22 @@ export const Users: React.FC = () => {
     }
   };
 
+  // Show error state
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="text-red-500 text-lg font-semibold mb-2">
+            Failed to load users
+          </div>
+          <Button onClick={() => window.location.reload()} variant="outline">
+            Retry
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 ">
       {/* Premium Header Section */}
@@ -219,7 +240,7 @@ export const Users: React.FC = () => {
                     <Shield className="h-4 w-4 sm:h-6 sm:w-6 text-blue-400 flex-shrink-0" />
                     <div className="min-w-0">
                       <p className="text-lg sm:text-2xl font-bold truncate">
-                        {isLoading ? "-" : filteredUsers.length || 0}
+                        {isLoading ? "-" : safeUserData.length || 0}
                       </p>
                       <p className="text-xs text-blue-200 truncate">
                         {t("dashboard.totalUsers")}
@@ -232,7 +253,7 @@ export const Users: React.FC = () => {
                       <p className="text-lg sm:text-2xl font-bold truncate">
                         {isLoading
                           ? "-"
-                          : filteredUsers.filter(
+                          : safeUserData.filter(
                               (u: User) => u.status === "active"
                             ).length || 0}
                       </p>
@@ -247,9 +268,8 @@ export const Users: React.FC = () => {
                       <p className="text-lg sm:text-2xl font-bold truncate">
                         {isLoading
                           ? "-"
-                          : filteredUsers.filter(
-                              (u: User) => u.role === "admin"
-                            ).length || 0}
+                          : safeUserData.filter((u: User) => u.role === "admin")
+                              .length || 0}
                       </p>
                       <p className="text-xs text-emerald-200 truncate">
                         {t("users.admins")}
