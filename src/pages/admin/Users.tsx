@@ -94,16 +94,18 @@ export const Users: React.FC = () => {
     setSortConfig({ key, direction });
   };
 
-  const sortedUsers = [...(userData ? userData : [])].sort((a, b) => {
-    if (!sortConfig) return 0;
+  const sortedUsers = (Array.isArray(userData) ? [...userData] : []).sort(
+    (a, b) => {
+      if (!sortConfig) return 0;
 
-    const aValue = a[sortConfig.key];
-    const bValue = b[sortConfig.key];
+      const aValue = a[sortConfig.key];
+      const bValue = b[sortConfig.key];
 
-    if (aValue < bValue) return sortConfig.direction === "asc" ? -1 : 1;
-    if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1;
-    return 0;
-  });
+      if (aValue < bValue) return sortConfig.direction === "asc" ? -1 : 1;
+      if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1;
+      return 0;
+    }
+  );
 
   const filteredUsers = sortedUsers?.filter((user) => {
     const matchesSearch =
