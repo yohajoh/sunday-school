@@ -82,7 +82,6 @@ const exportUsers = async (filteredUsers: User[]) => {
       "Days Since Last Login": user.lastLogin
         ? calculateDaysSince(user.lastLogin)
         : "N/A",
-      "Account Created": user.createdAt ? formatDate(user.createdAt) : "N/A",
     }));
 
     const detailedWorksheet = XLSX.utils.json_to_sheet(detailedData);

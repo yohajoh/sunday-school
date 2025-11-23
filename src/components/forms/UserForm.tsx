@@ -75,12 +75,12 @@ export const UserForm: React.FC<UserFormProps> = ({
     status: "active",
   });
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    control,
-  } = useForm();
+  // const {
+  //   register,
+  //   handleSubmit,
+  //   formState: { errors },
+  //   control,
+  // } = useForm();
 
   useEffect(() => {
     if (user) {
