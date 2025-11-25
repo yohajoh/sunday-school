@@ -48,6 +48,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useAssetMutation } from "@/hooks/useAssetMutation";
+import { useQuery } from "@tanstack/react-query";
 
 export const Assets: React.FC = () => {
   const { t } = useLanguage();
@@ -65,6 +67,33 @@ export const Assets: React.FC = () => {
   const [editAsset, setEditAsset] = useState<Asset | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
+  const { createAsset } = useAssetMutation();
+
+  const API = import.meta.env.VITE_API_URL;
+  const {
+    data: assetData,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["assets"],
+    queryFn: async function () {
+      try {
+        const res = await fetch(`${API}/api/sunday-school/assets`, {
+          method: "GET",
+        });
+
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        const data = await res.json();
+        return data.data.data;
+      } catch (err) {
+        toast.error("Faild to fetched Assets data!");
+        return [];
+      }
+    },
+  });
+
   const handleSort = (key: keyof Asset) => {
     let direction: "asc" | "desc" = "asc";
     if (
@@ -77,7 +106,9 @@ export const Assets: React.FC = () => {
     setSortConfig({ key, direction });
   };
 
-  const sortedAssets = [...assets].sort((a, b) => {
+  const assetsList = Array.isArray(assetData) ? assetData : [];
+
+  const sortedAssets = [...assetsList].sort((a, b) => {
     if (!sortConfig) return 0;
 
     const aValue = a[sortConfig.key];
@@ -129,16 +160,17 @@ export const Assets: React.FC = () => {
   };
 
   const handleDeleteAsset = (asset: Asset) => {
-    deleteAsset(asset.id);
+    // deleteAsset(asset.id);
     toast.success("Asset deleted successfully");
   };
 
   const handleAssetSave = (asset: Asset) => {
-    setEditAsset(null);
-    setIsCreateDialogOpen(false);
-    toast.success(
-      asset.id ? "Asset updated successfully" : "Asset created successfully"
-    );
+    createAsset.mutate(asset, {
+      onSuccess: () => {
+        setEditAsset(null);
+        setIsCreateDialogOpen(false);
+      },
+    });
   };
 
   const getStatusColor = (status: string) => {
@@ -173,7 +205,7 @@ export const Assets: React.FC = () => {
 
   const getAssignedUserName = (userId?: string) => {
     if (!userId) return t("assets.notAssigned");
-    const user = users.find((u) => u.id === userId);
+    const user = users.find((u: Asset) => u.id === userId);
     return user
       ? `${user.firstName} ${user.lastName}`
       : t("assets.unknownUser");
@@ -412,7 +444,7 @@ export const Assets: React.FC = () => {
               <TableBody>
                 {filteredAssets.map((asset) => (
                   <TableRow
-                    key={asset.id}
+                    key={asset._id}
                     className="border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-all duration-300 group"
                   >
                     <TableCell className="py-3 sm:py-4 px-2 sm:px-4 sticky left-0 bg-inherit z-10">

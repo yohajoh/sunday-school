@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useApp } from "@/contexts/AppContext";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { Asset } from "@/types";
+import { Asset, User } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,6 +28,8 @@ import {
   Tag,
 } from "lucide-react";
 import { toast } from "sonner";
+import { Controller, useForm } from "react-hook-form";
+import { useQuery } from "@tanstack/react-query";
 
 interface AssetFormProps {
   asset?: Asset;
@@ -43,106 +45,132 @@ export const AssetForm: React.FC<AssetFormProps> = ({
   mode = "create",
 }) => {
   const { t } = useLanguage();
-  const { addAsset, updateAsset, users } = useApp();
-  const [isLoading, setIsLoading] = useState(false);
 
-  const [formData, setFormData] = useState<Partial<Asset>>({
-    code: "",
-    name: "",
-    description: "",
-    category: "",
-    status: "available",
-    assignedTo: "",
-    purchaseDate: new Date().toISOString().split("T")[0],
-    purchasePrice: 0,
-    location: "",
-    condition: "good",
-    supplier: "",
-    serialNumber: "",
-    warrantyExpiry: "",
-    tags: [],
-    images: [],
+  const {
+    handleSubmit,
+    control,
+    watch,
+    setValue,
+    formState: { errors, isSubmitting },
+  } = useForm<Asset>({
+    defaultValues: {
+      code: "",
+      name: "",
+      description: "",
+      category: "",
+      status: "available",
+      assignedTo: "",
+      purchaseDate: new Date().toISOString().split("T")[0],
+      purchasePrice: 0,
+      location: "",
+      condition: "good",
+      supplier: "",
+      serialNumber: "",
+      warrantyExpiry: "",
+      tags: [],
+      images: [],
+    },
   });
 
   const [tagInput, setTagInput] = useState("");
 
   useEffect(() => {
     if (asset) {
-      setFormData(asset);
+      Object.keys(asset).forEach((key) => {
+        setValue(key as keyof Asset, asset[key as keyof Asset]);
+      });
     }
-  }, [asset]);
-
-  const updateField = (field: string, value: any) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
+  }, [asset, setValue]);
 
   const addTag = () => {
-    if (tagInput.trim() && !formData.tags?.includes(tagInput.trim())) {
-      updateField("tags", [...(formData.tags || []), tagInput.trim()]);
-      setTagInput("");
+    if (tagInput.trim()) {
+      const currentTags = watch("tags") || [];
+      if (!currentTags.includes(tagInput.trim())) {
+        setValue("tags", [...currentTags, tagInput.trim()]);
+        setTagInput("");
+      }
     }
   };
 
   const removeTag = (tagToRemove: string) => {
-    updateField(
+    const currentTags = watch("tags") || [];
+    setValue(
       "tags",
-      formData.tags?.filter((tag) => tag !== tagToRemove)
+      currentTags.filter((tag) => tag !== tagToRemove)
     );
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
+  const API = import.meta.env.VITE_API_URL;
+  const {
+    data: users,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["users"],
+    queryFn: async function fetchUsers() {
+      try {
+        const res = await fetch(`${API}/api/sunday-school/users`);
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        const data = await res.json();
+        return data.data.data; // Ensure we always return an array
+      } catch (err) {
+        console.error("Error fetching users:", err);
+        toast.error("Failed to load users");
+        return []; // Return empty array on error
+      }
+    },
+    staleTime: 1000 * 60 + 5,
+    gcTime: 1000 * 60 * 60,
+  });
 
+  const onSubmitForm = async (data: Asset) => {
     try {
       // Validation
-      if (!formData.code || !formData.name || !formData.category) {
+      if (!data.code || !data.name || !data.category) {
         toast.error(t("assetForm.requiredFields"));
         return;
       }
-
       const assetData: Asset = {
         id: asset?.id || Date.now().toString(),
-        code: formData.code!,
-        name: formData.name!,
-        description: formData.description!,
-        category: formData.category!,
-        status: formData.status!,
-        assignedTo: formData.assignedTo,
-        purchaseDate: formData.purchaseDate!,
-        purchasePrice: formData.purchasePrice!,
-        location: formData.location!,
-        condition: formData.condition!,
-        supplier: formData.supplier!,
-        serialNumber: formData.serialNumber,
-        warrantyExpiry: formData.warrantyExpiry,
-        tags: formData.tags || [],
-        images: formData.images || [],
+        code: data.code!,
+        name: data.name!,
+        description: data.description!,
+        category: data.category!,
+        status: data.status!,
+        assignedTo: data.assignedTo,
+        purchaseDate: data.purchaseDate!,
+        purchasePrice: data.purchasePrice!,
+        location: data.location!,
+        condition: data.condition!,
+        supplier: data.supplier!,
+        serialNumber: data.serialNumber,
+        warrantyExpiry: data.warrantyExpiry,
+        tags: data.tags || [],
+        images: data.images || [],
         createdAt: asset?.createdAt || new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        lastMaintenanceDate: formData.lastMaintenanceDate,
-        nextMaintenanceDate: formData.nextMaintenanceDate,
+        lastMaintenanceDate: data.lastMaintenanceDate,
+        nextMaintenanceDate: data.nextMaintenanceDate,
       };
 
-      if (mode === "create") {
-        addAsset(assetData);
-        toast.success(t("assetForm.assetCreated"), {
-          description: `${assetData.name} ${t("assetForm.assetAdded")}`,
-        });
-      } else {
-        updateAsset(assetData.id, assetData);
-        toast.success(t("assetForm.assetUpdated"), {
-          description: t("assetForm.assetChangesSaved"),
-        });
-      }
-
+      // if (mode === "create") {
+      //   addAsset(assetData);
+      //   toast.success(t("assetForm.assetCreated"), {
+      //     description: `${assetData.name} ${t("assetForm.assetAdded")}`,
+      //   });
+      // } else {
+      //   updateAsset(assetData.id, assetData);
+      //   toast.success(t("assetForm.assetUpdated"), {
+      //     description: t("assetForm.assetChangesSaved"),
+      //   });
+      // }
       onSave?.(assetData);
     } catch (error) {
       toast.error(t("assetForm.saveError"), {
         description: "Please try again later.",
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -201,7 +229,7 @@ export const AssetForm: React.FC<AssetFormProps> = ({
           </div>
         </div>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit(onSubmitForm)}>
           <div className="grid lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
             {/* Basic Information */}
             <Card className="lg:col-span-2 border-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-2xl rounded-3xl border border-slate-200/50 dark:border-slate-800/50">
@@ -215,146 +243,189 @@ export const AssetForm: React.FC<AssetFormProps> = ({
               </CardHeader>
               <CardContent className="p-4 sm:p-6 space-y-4 sm:space-y-6">
                 <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
-                  <div className="space-y-2 sm:space-y-3">
-                    <Label className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1 sm:gap-2">
-                      <Barcode className="h-3 w-3 sm:h-4 sm:w-4" />
-                      {t("assetForm.assetCode")} *
-                    </Label>
-                    <Input
-                      value={formData.code}
-                      onChange={(e) => updateField("code", e.target.value)}
-                      required
-                      className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-300 shadow-sm text-sm sm:text-base"
-                      placeholder="AST-001"
-                    />
-                  </div>
+                  <Controller
+                    name="code"
+                    control={control}
+                    rules={{ required: "Asset code is required" }}
+                    render={({ field }) => (
+                      <div className="space-y-2 sm:space-y-3">
+                        <Label className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1 sm:gap-2">
+                          <Barcode className="h-3 w-3 sm:h-4 sm:w-4" />
+                          {t("assetForm.assetCode")} *
+                        </Label>
+                        <Input
+                          {...field}
+                          required
+                          className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-300 shadow-sm text-sm sm:text-base"
+                          placeholder="AST-001"
+                        />
+                      </div>
+                    )}
+                  />
 
-                  <div className="space-y-2 sm:space-y-3">
-                    <Label className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300">
-                      {t("assetForm.assetName")} *
-                    </Label>
-                    <Input
-                      value={formData.name}
-                      onChange={(e) => updateField("name", e.target.value)}
-                      required
-                      className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-300 shadow-sm text-sm sm:text-base"
-                      placeholder={t("assetForm.assetName")}
-                    />
-                  </div>
+                  <Controller
+                    name="name"
+                    control={control}
+                    rules={{ required: "Asset name is required" }}
+                    render={({ field }) => (
+                      <div className="space-y-2 sm:space-y-3">
+                        <Label className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300">
+                          {t("assetForm.assetName")} *
+                        </Label>
+                        <Input
+                          {...field}
+                          required
+                          className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-300 shadow-sm text-sm sm:text-base"
+                          placeholder={t("assetForm.assetName")}
+                        />
+                      </div>
+                    )}
+                  />
                 </div>
 
-                <div className="space-y-2 sm:space-y-3">
-                  <Label className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300">
-                    {t("assetForm.description")}
-                  </Label>
-                  <Textarea
-                    value={formData.description}
-                    onChange={(e) => updateField("description", e.target.value)}
-                    rows={3}
-                    className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 resize-none transition-all duration-300 shadow-sm text-sm sm:text-base"
-                    placeholder={t("assetForm.description")}
+                <Controller
+                  name="description"
+                  control={control}
+                  render={({ field }) => (
+                    <div className="space-y-2 sm:space-y-3">
+                      <Label className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300">
+                        {t("assetForm.description")}
+                      </Label>
+                      <Textarea
+                        {...field}
+                        rows={3}
+                        className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 resize-none transition-all duration-300 shadow-sm text-sm sm:text-base"
+                        placeholder={t("assetForm.description")}
+                      />
+                    </div>
+                  )}
+                />
+
+                <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
+                  <Controller
+                    name="category"
+                    control={control}
+                    rules={{ required: "Category is required" }}
+                    render={({ field }) => (
+                      <div className="space-y-2 sm:space-y-3">
+                        <Label className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300">
+                          {t("assetForm.category")} *
+                        </Label>
+                        <Select
+                          value={field.value}
+                          onValueChange={field.onChange}
+                        >
+                          <SelectTrigger className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-300 shadow-sm text-sm sm:text-base">
+                            <SelectValue
+                              placeholder={t("assetForm.category")}
+                            />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {assetCategories.map((category) => (
+                              <SelectItem key={category} value={category}>
+                                {t(`assetForm.categories.${category}`)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                  />
+
+                  <Controller
+                    name="status"
+                    control={control}
+                    render={({ field }) => (
+                      <div className="space-y-2 sm:space-y-3">
+                        <Label className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300">
+                          {t("assetForm.status")} *
+                        </Label>
+                        <Select
+                          value={field.value}
+                          onValueChange={field.onChange}
+                        >
+                          <SelectTrigger className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-300 shadow-sm text-sm sm:text-base">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {statusTypes.map((status) => (
+                              <SelectItem
+                                key={status.value}
+                                value={status.value}
+                              >
+                                {status.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
                   />
                 </div>
 
                 <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
-                  <div className="space-y-2 sm:space-y-3">
-                    <Label className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300">
-                      {t("assetForm.category")} *
-                    </Label>
-                    <Select
-                      value={formData.category}
-                      onValueChange={(value) => updateField("category", value)}
-                    >
-                      <SelectTrigger className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-300 shadow-sm text-sm sm:text-base">
-                        <SelectValue placeholder={t("assetForm.category")} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {assetCategories.map((category) => (
-                          <SelectItem key={category} value={category}>
-                            {t(`assetForm.categories.${category}`)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2 sm:space-y-3">
-                    <Label className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300">
-                      {t("assetForm.status")} *
-                    </Label>
-                    <Select
-                      value={formData.status}
-                      onValueChange={(value: any) =>
-                        updateField("status", value)
-                      }
-                    >
-                      <SelectTrigger className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-300 shadow-sm text-sm sm:text-base">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {statusTypes.map((status) => (
-                          <SelectItem key={status.value} value={status.value}>
-                            {status.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
-                  <div className="space-y-2 sm:space-y-3">
-                    <Label className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300">
-                      {t("assetForm.assignedTo")}
-                    </Label>
-                    <Select
-                      value={formData.assignedTo}
-                      onValueChange={(value) =>
-                        updateField("assignedTo", value)
-                      }
-                    >
-                      <SelectTrigger className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-300 shadow-sm text-sm sm:text-base">
-                        <SelectValue placeholder={t("assetForm.assignedTo")} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="not-assigned">
+                  <Controller
+                    name="assignedTo"
+                    control={control}
+                    render={({ field }) => (
+                      <div className="space-y-2 sm:space-y-3">
+                        <Label className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300">
                           {t("assetForm.assignedTo")}
-                        </SelectItem>
-                        {/* Uncomment when users data is available */}
-                        {/* {users.map((user) => (
-                          <SelectItem key={user.id} value={user.id}>
-                            {user.firstName} {user.lastName}
-                          </SelectItem>
-                        ))} */}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                        </Label>
+                        <Select
+                          value={field.value}
+                          onValueChange={field.onChange}
+                        >
+                          <SelectTrigger className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-300 shadow-sm text-sm sm:text-base">
+                            <SelectValue
+                              placeholder={t("assetForm.assignedTo")}
+                            />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="not-assigned">
+                              {t("assetForm.assignedTo")}
+                            </SelectItem>
+                            {/* Uncomment when users data is available */}
+                            {users?.map((user) => (
+                              <SelectItem key={user._id} value={user._id}>
+                                {user.firstName} {user.lastName}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                  />
 
-                  <div className="space-y-2 sm:space-y-3">
-                    <Label className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300">
-                      {t("assetForm.condition")}
-                    </Label>
-                    <Select
-                      value={formData.condition}
-                      onValueChange={(value: any) =>
-                        updateField("condition", value)
-                      }
-                    >
-                      <SelectTrigger className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-300 shadow-sm text-sm sm:text-base">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {conditionTypes.map((condition) => (
-                          <SelectItem
-                            key={condition.value}
-                            value={condition.value}
-                          >
-                            {condition.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <Controller
+                    name="condition"
+                    control={control}
+                    render={({ field }) => (
+                      <div className="space-y-2 sm:space-y-3">
+                        <Label className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300">
+                          {t("assetForm.condition")}
+                        </Label>
+                        <Select
+                          value={field.value}
+                          onValueChange={field.onChange}
+                        >
+                          <SelectTrigger className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-300 shadow-sm text-sm sm:text-base">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {conditionTypes.map((condition) => (
+                              <SelectItem
+                                key={condition.value}
+                                value={condition.value}
+                              >
+                                {condition.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                  />
                 </div>
               </CardContent>
             </Card>
@@ -370,50 +441,61 @@ export const AssetForm: React.FC<AssetFormProps> = ({
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3 sm:space-y-4">
-                  <div className="space-y-2 sm:space-y-3">
-                    <Label className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300">
-                      {t("assetForm.purchaseDate")}
-                    </Label>
-                    <Input
-                      type="date"
-                      value={formData.purchaseDate}
-                      onChange={(e) =>
-                        updateField("purchaseDate", e.target.value)
-                      }
-                      className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-300 shadow-sm text-sm sm:text-base"
-                    />
-                  </div>
+                  <Controller
+                    name="purchaseDate"
+                    control={control}
+                    render={({ field }) => (
+                      <div className="space-y-2 sm:space-y-3">
+                        <Label className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300">
+                          {t("assetForm.purchaseDate")}
+                        </Label>
+                        <Input
+                          type="date"
+                          {...field}
+                          className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-300 shadow-sm text-sm sm:text-base"
+                        />
+                      </div>
+                    )}
+                  />
 
-                  <div className="space-y-2 sm:space-y-3">
-                    <Label className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300">
-                      {t("assetForm.purchasePrice")} (ETB)
-                    </Label>
-                    <Input
-                      type="number"
-                      value={formData.purchasePrice}
-                      onChange={(e) =>
-                        updateField(
-                          "purchasePrice",
-                          parseFloat(e.target.value) || 0
-                        )
-                      }
-                      className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-300 shadow-sm text-sm sm:text-base"
-                      placeholder="0.00"
-                    />
-                  </div>
+                  <Controller
+                    name="purchasePrice"
+                    control={control}
+                    render={({ field }) => (
+                      <div className="space-y-2 sm:space-y-3">
+                        <Label className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300">
+                          {t("assetForm.purchasePrice")} (ETB)
+                        </Label>
+                        <Input
+                          type="number"
+                          {...field}
+                          onChange={(e) =>
+                            field.onChange(parseFloat(e.target.value) || 0)
+                          }
+                          className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-300 shadow-sm text-sm sm:text-base"
+                          placeholder="0.00"
+                        />
+                      </div>
+                    )}
+                  />
 
-                  <div className="space-y-2 sm:space-y-3">
-                    <Label className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1 sm:gap-2">
-                      <Truck className="h-3 w-3 sm:h-4 sm:w-4" />
-                      {t("assetForm.supplier")}
-                    </Label>
-                    <Input
-                      value={formData.supplier}
-                      onChange={(e) => updateField("supplier", e.target.value)}
-                      className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-300 shadow-sm text-sm sm:text-base"
-                      placeholder={t("assetForm.supplier")}
-                    />
-                  </div>
+                  <Controller
+                    name="supplier"
+                    control={control}
+                    render={({ field }) => (
+                      <div className="space-y-2 sm:space-y-3">
+                        <Label className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1 sm:gap-2">
+                          <Truck className="h-3 w-3 sm:h-4 sm:w-4" />
+                          {t("assetForm.supplier")}
+                        </Label>
+                        <Input
+                          {...field}
+                          className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-300 shadow-sm text-sm sm:text-base"
+                          placeholder={t("assetForm.supplier")}
+                        />
+                      </div>
+                    )}
+                  />
                 </CardContent>
               </Card>
 
@@ -426,46 +508,57 @@ export const AssetForm: React.FC<AssetFormProps> = ({
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3 sm:space-y-4">
-                  <div className="space-y-2 sm:space-y-3">
-                    <Label className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300">
-                      {t("assetForm.location")}
-                    </Label>
-                    <Input
-                      value={formData.location}
-                      onChange={(e) => updateField("location", e.target.value)}
-                      className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-300 shadow-sm text-sm sm:text-base"
-                      placeholder={t("assetForm.location")}
-                    />
-                  </div>
+                  <Controller
+                    name="location"
+                    control={control}
+                    render={({ field }) => (
+                      <div className="space-y-2 sm:space-y-3">
+                        <Label className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300">
+                          {t("assetForm.location")}
+                        </Label>
+                        <Input
+                          {...field}
+                          className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-300 shadow-sm text-sm sm:text-base"
+                          placeholder={t("assetForm.location")}
+                        />
+                      </div>
+                    )}
+                  />
 
-                  <div className="space-y-2 sm:space-y-3">
-                    <Label className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300">
-                      {t("assetForm.serialNumber")}
-                    </Label>
-                    <Input
-                      value={formData.serialNumber}
-                      onChange={(e) =>
-                        updateField("serialNumber", e.target.value)
-                      }
-                      className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-300 shadow-sm text-sm sm:text-base"
-                      placeholder="SN123456789"
-                    />
-                  </div>
+                  <Controller
+                    name="serialNumber"
+                    control={control}
+                    render={({ field }) => (
+                      <div className="space-y-2 sm:space-y-3">
+                        <Label className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300">
+                          {t("assetForm.serialNumber")}
+                        </Label>
+                        <Input
+                          {...field}
+                          className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-300 shadow-sm text-sm sm:text-base"
+                          placeholder="SN123456789"
+                        />
+                      </div>
+                    )}
+                  />
 
-                  <div className="space-y-2 sm:space-y-3">
-                    <Label className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1 sm:gap-2">
-                      <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
-                      {t("assetForm.warrantyExpiry")}
-                    </Label>
-                    <Input
-                      type="date"
-                      value={formData.warrantyExpiry}
-                      onChange={(e) =>
-                        updateField("warrantyExpiry", e.target.value)
-                      }
-                      className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-300 shadow-sm text-sm sm:text-base"
-                    />
-                  </div>
+                  <Controller
+                    name="warrantyExpiry"
+                    control={control}
+                    render={({ field }) => (
+                      <div className="space-y-2 sm:space-y-3">
+                        <Label className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1 sm:gap-2">
+                          <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
+                          {t("assetForm.warrantyExpiry")}
+                        </Label>
+                        <Input
+                          type="date"
+                          {...field}
+                          className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-300 shadow-sm text-sm sm:text-base"
+                        />
+                      </div>
+                    )}
+                  />
                 </CardContent>
               </Card>
 
@@ -498,7 +591,7 @@ export const AssetForm: React.FC<AssetFormProps> = ({
                   </div>
 
                   <div className="flex flex-wrap gap-2">
-                    {formData.tags?.map((tag) => (
+                    {watch("tags")?.map((tag) => (
                       <Badge
                         key={tag}
                         variant="secondary"
@@ -535,10 +628,10 @@ export const AssetForm: React.FC<AssetFormProps> = ({
 
             <Button
               type="submit"
-              disabled={isLoading}
+              disabled={isSubmitting}
               className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-lg hover:shadow-xl rounded-lg sm:rounded-xl transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base px-4 sm:px-6 py-2 order-1 sm:order-2"
             >
-              {isLoading ? (
+              {isSubmitting ? (
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   {t("assetForm.saving")}

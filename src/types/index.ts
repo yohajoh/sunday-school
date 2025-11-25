@@ -31,7 +31,7 @@ export interface User {
 }
 
 export interface Asset {
-  id: string;
+  id?: string;
   code: string;
   name: string;
   description: string;
