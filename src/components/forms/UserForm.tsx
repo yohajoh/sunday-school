@@ -1,13 +1,11 @@
-import React, { useState, useEffect } from "react";
-import useForm from "react-hook-form";
-import { useApp } from "@/contexts/AppContext";
+import React from "react";
+import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { User } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -23,139 +21,40 @@ import {
   MapPin,
   Calendar,
   IdCard,
-  Church,
   Users,
-  Heart,
   Save,
   Sparkles,
+  Lock,
 } from "lucide-react";
-import { toast } from "sonner";
+import { useUserMutation } from "@/hooks/useUserMutations";
 
 interface UserFormProps {
-  user?: User;
-  onSave?: (user: User) => void;
+  onSave: (user: User) => void;
   onCancel?: () => void;
   mode?: "create" | "edit";
 }
 
 export const UserForm: React.FC<UserFormProps> = ({
-  user,
   onSave,
   onCancel,
   mode = "create",
 }) => {
   const { t } = useLanguage();
-  const { addUser, updateUser, currentUser } = useApp();
-  const [isLoading, setIsLoading] = useState(false);
+  const { isPending } = useUserMutation();
 
-  const [formData, setFormData] = useState<Partial<User>>({
-    studentId: "",
-    email: "",
-    role: "user",
-    firstName: "",
-    middleName: "",
-    lastName: "",
-    sex: "male",
-    phoneNumber: "",
-    disability: false,
-    disabilityType: "",
-    dateOfBirth: "",
-    country: "Ethiopia",
-    region: "",
-    zone: "",
-    woreda: "",
-    church: "",
-    occupation: "",
-    marriageStatus: "single",
-    parentStatus: "both",
-    parentFullName: "",
-    parentEmail: "",
-    parentPhoneNumber: "",
-    nationalId: "",
-    status: "active",
-  });
+  const {
+    handleSubmit,
+    watch,
+    formState: { errors, isSubmitting },
+    control,
+  } = useForm<User>();
 
-  // const {
-  //   register,
-  //   handleSubmit,
-  //   formState: { errors },
-  //   control,
-  // } = useForm();
+  const disibilityValue = watch("disability");
 
-  useEffect(() => {
-    if (user) {
-      setFormData(user);
-    }
-  }, [user]);
-
-  const updateField = (field: string, value: any) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+  const onSubmitForm: SubmitHandler<User> = (data) => {
+    onSave(data);
+    console.log("submit data: ", data);
   };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    try {
-      // Validation
-      if (!formData.studentId || !formData.firstName || !formData.email) {
-        toast.error(t("userForm.requiredFields"));
-        return;
-      }
-
-      const userData: User = {
-        id: user?.id || Date.now().toString(),
-        studentId: formData.studentId!,
-        email: formData.email!,
-        role: formData.role!,
-        firstName: formData.firstName!,
-        middleName: formData.middleName!,
-        lastName: formData.lastName!,
-        sex: formData.sex!,
-        phoneNumber: formData.phoneNumber!,
-        disability: formData.disability!,
-        disabilityType: formData.disabilityType!,
-        dateOfBirth: formData.dateOfBirth!,
-        country: formData.country!,
-        region: formData.region!,
-        zone: formData.zone!,
-        woreda: formData.woreda!,
-        church: formData.church!,
-        occupation: formData.occupation!,
-        marriageStatus: formData.marriageStatus!,
-        parentStatus: formData.parentStatus!,
-        parentFullName: formData.parentFullName!,
-        parentEmail: formData.parentEmail!,
-        parentPhoneNumber: formData.parentPhoneNumber!,
-        nationalId: formData.nationalId!,
-        joinDate: user?.joinDate || new Date().toISOString().split("T")[0],
-        status: formData.status!,
-        lastLogin: user?.lastLogin,
-      };
-
-      if (mode === "create") {
-        addUser(userData);
-        toast.success("User created successfully!", {
-          description: `${userData.firstName} ${userData.lastName} has been added to the system.`,
-        });
-      } else {
-        updateUser(userData.id, userData);
-        toast.success("User updated successfully!", {
-          description: "User information has been updated.",
-        });
-      }
-
-      onSave?.(userData);
-    } catch (error) {
-      toast.error("Failed to save user", {
-        description: "Please try again later.",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const isEditingOwnProfile = user?.id === currentUser?.id;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-emerald-50/50 dark:from-slate-900 dark:via-blue-950/20 dark:to-emerald-950/10 ">
@@ -179,16 +78,9 @@ export const UserForm: React.FC<UserFormProps> = ({
               </p>
             </div>
           </div>
-
-          {isEditingOwnProfile && (
-            <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 shadow-lg">
-              <Heart className="h-3 w-3 mr-1" />
-              {t("userForm.editingOwnProfile")}
-            </Badge>
-          )}
         </div>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit(onSubmitForm)}>
           <div className="grid lg:grid-cols-3 gap-8">
             {/* Personal Information */}
             <Card className="lg:col-span-2 border-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-2xl rounded-3xl border border-slate-200/50 dark:border-slate-800/50">
@@ -202,203 +94,277 @@ export const UserForm: React.FC<UserFormProps> = ({
               </CardHeader>
               <CardContent className="p-6 space-y-6">
                 <div className="grid gap-6 md:grid-cols-3">
-                  <div className="space-y-3">
-                    <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                      <IdCard className="h-4 w-4" />
-                      {t("userForm.studentId")} *
-                    </Label>
-                    <Input
-                      value={formData.studentId}
-                      onChange={(e) => updateField("studentId", e.target.value)}
-                      required
-                      className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 shadow-sm"
-                      placeholder="SS001"
-                    />
-                  </div>
+                  <Controller
+                    name="studentId"
+                    control={control}
+                    rules={{ required: "StudentId must be filled!" }}
+                    render={({ field }) => (
+                      <div className="space-y-3">
+                        <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                          <IdCard className="h-4 w-4" />
+                          {t("userForm.studentId")} *
+                        </Label>
+                        <Input
+                          {...field}
+                          className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 shadow-sm"
+                          placeholder="SS001"
+                        />
+                      </div>
+                    )}
+                  />
 
-                  <div className="space-y-3">
-                    <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                      {t("userForm.firstName")} *
-                    </Label>
-                    <Input
-                      value={formData.firstName}
-                      onChange={(e) => updateField("firstName", e.target.value)}
-                      required
-                      className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 shadow-sm"
-                      placeholder="John"
-                    />
-                  </div>
+                  <Controller
+                    name="firstName"
+                    control={control}
+                    rules={{ required: "The firstName field must be filled!" }}
+                    render={({ field }) => (
+                      <div className="space-y-3">
+                        <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                          {t("userForm.firstName")} *
+                        </Label>
+                        <Input
+                          {...field}
+                          className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 shadow-sm"
+                          placeholder="John"
+                        />
+                      </div>
+                    )}
+                  />
 
-                  <div className="space-y-3">
-                    <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                      {t("userForm.middleName")}
-                    </Label>
-                    <Input
-                      value={formData.middleName}
-                      onChange={(e) =>
-                        updateField("middleName", e.target.value)
-                      }
-                      className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 shadow-sm"
-                      placeholder="Michael"
-                    />
-                  </div>
+                  <Controller
+                    name="middleName"
+                    control={control}
+                    rules={{ required: "The middleName field must be filled!" }}
+                    render={({ field }) => (
+                      <div className="space-y-3">
+                        <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                          {t("userForm.middleName")}
+                        </Label>
+                        <Input
+                          {...field}
+                          className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 shadow-sm"
+                          placeholder="Michael"
+                        />
+                      </div>
+                    )}
+                  />
                 </div>
 
                 <div className="grid gap-6 md:grid-cols-2">
-                  <div className="space-y-3">
-                    <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                      {t("userForm.lastName")} *
-                    </Label>
-                    <Input
-                      value={formData.lastName}
-                      onChange={(e) => updateField("lastName", e.target.value)}
-                      required
-                      className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 shadow-sm"
-                      placeholder="Doe"
-                    />
-                  </div>
+                  <Controller
+                    name="lastName"
+                    control={control}
+                    rules={{ required: "The lastName field must be filled!" }}
+                    render={({ field }) => (
+                      <div className="space-y-3">
+                        <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                          {t("userForm.lastName")} *
+                        </Label>
+                        <Input
+                          {...field}
+                          className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 shadow-sm"
+                          placeholder="Doe"
+                        />
+                      </div>
+                    )}
+                  />
 
-                  <div className="space-y-3">
-                    <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                      {t("userForm.sex")} *
-                    </Label>
-                    <Select
-                      value={formData.sex}
-                      onValueChange={(value: "male" | "female") =>
-                        updateField("sex", value)
-                      }
-                    >
-                      <SelectTrigger className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 shadow-sm">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="male">
-                          {t("userForm.male")}
-                        </SelectItem>
-                        <SelectItem value="female">
-                          {t("userForm.female")}
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <Controller
+                    name="sex"
+                    control={control}
+                    render={({ field }) => (
+                      <div className="space-y-3">
+                        <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                          {t("userForm.sex")} *
+                        </Label>
+                        <Select
+                          value={field.value}
+                          onValueChange={field.onChange}
+                        >
+                          <SelectTrigger className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 shadow-sm">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="male">
+                              {t("userForm.male")}
+                            </SelectItem>
+                            <SelectItem value="female">
+                              {t("userForm.female")}
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                  />
                 </div>
 
                 <div className="grid gap-6 md:grid-cols-2">
-                  <div className="space-y-3">
-                    <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                      <Mail className="h-4 w-4" />
-                      {t("userForm.email")} *
-                    </Label>
-                    <Input
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => updateField("email", e.target.value)}
-                      required
-                      className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 shadow-sm"
-                      placeholder="john@example.com"
-                    />
-                  </div>
+                  <Controller
+                    name="email"
+                    control={control}
+                    rules={{ required: "Email must be provided!" }}
+                    render={({ field }) => (
+                      <div className="space-y-3">
+                        <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                          <Mail className="h-4 w-4" />
+                          {t("userForm.email")} *
+                        </Label>
+                        <Input
+                          {...field}
+                          className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 shadow-sm"
+                          placeholder="john@example.com"
+                        />
+                      </div>
+                    )}
+                  />
 
-                  <div className="space-y-3">
-                    <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                      <Phone className="h-4 w-4" />
-                      {t("userForm.phone")} *
-                    </Label>
-                    <Input
-                      type="tel"
-                      value={formData.phoneNumber}
-                      onChange={(e) =>
-                        updateField("phoneNumber", e.target.value)
-                      }
-                      required
-                      className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 shadow-sm"
-                      placeholder="+251911223344"
+                  <Controller
+                    name="phoneNumber"
+                    control={control}
+                    rules={{ required: "phoneNumber must be provided!" }}
+                    render={({ field }) => (
+                      <div className="space-y-3">
+                        <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                          <Phone className="h-4 w-4" />
+                          {t("userForm.phone")} *
+                        </Label>
+                        <Input
+                          type="tel"
+                          {...field}
+                          className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 shadow-sm"
+                          placeholder="+251911223344"
+                        />
+                      </div>
+                    )}
+                  />
+                </div>
+
+                {/* Add Password Field - Only for create mode */}
+                {mode === "create" && (
+                  <div className="grid gap-6 md:grid-cols-2">
+                    <Controller
+                      name="password"
+                      control={control}
+                      rules={{
+                        required: "Password is required!",
+                        minLength: {
+                          value: 6,
+                          message: "Password must be at least 6 characters",
+                        },
+                      }}
+                      render={({ field }) => (
+                        <div className="space-y-3">
+                          <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                            <Lock className="h-4 w-4" />
+                            {t("userForm.password")} *
+                          </Label>
+                          <Input
+                            type="password"
+                            {...field}
+                            className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 shadow-sm"
+                            placeholder="Enter password"
+                          />
+                        </div>
+                      )}
                     />
+                    <div></div> {/* Empty div for grid alignment */}
                   </div>
+                )}
+
+                <div className="grid gap-6 md:grid-cols-2">
+                  <Controller
+                    name="dateOfBirth"
+                    control={control}
+                    render={({ field }) => (
+                      <div className="space-y-3">
+                        <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                          <Calendar className="h-4 w-4" />
+                          {t("userForm.dateOfBirth")} *
+                        </Label>
+                        <Input
+                          type="date"
+                          {...field}
+                          className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 shadow-sm"
+                        />
+                      </div>
+                    )}
+                  />
+
+                  <Controller
+                    name="nationalId"
+                    control={control}
+                    rules={{ required: "NationalId must be filled" }}
+                    render={({ field }) => (
+                      <div className="space-y-3">
+                        <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                          {t("userForm.nationalId")} *
+                        </Label>
+                        <Input
+                          {...field}
+                          className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 shadow-sm"
+                          placeholder="1234567890"
+                        />
+                      </div>
+                    )}
+                  />
                 </div>
 
                 <div className="grid gap-6 md:grid-cols-2">
-                  <div className="space-y-3">
-                    <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                      <Calendar className="h-4 w-4" />
-                      {t("userForm.dateOfBirth")} *
-                    </Label>
-                    <Input
-                      type="date"
-                      value={formData.dateOfBirth}
-                      onChange={(e) =>
-                        updateField("dateOfBirth", e.target.value)
-                      }
-                      required
-                      className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 shadow-sm"
-                    />
-                  </div>
+                  <Controller
+                    name="occupation"
+                    control={control}
+                    render={({ field }) => (
+                      <div className="space-y-3">
+                        <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                          {t("userForm.occupation")}
+                        </Label>
+                        <Input
+                          {...field}
+                          className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 shadow-sm"
+                          placeholder="Student / Teacher / Professional"
+                        />
+                      </div>
+                    )}
+                  />
 
-                  <div className="space-y-3">
-                    <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                      {t("userForm.nationalId")} *
-                    </Label>
-                    <Input
-                      value={formData.nationalId}
-                      onChange={(e) =>
-                        updateField("nationalId", e.target.value)
-                      }
-                      required
-                      className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 shadow-sm"
-                      placeholder="1234567890"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid gap-6 md:grid-cols-2">
-                  <div className="space-y-3">
-                    <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                      {t("userForm.occupation")}
-                    </Label>
-                    <Input
-                      value={formData.occupation}
-                      onChange={(e) =>
-                        updateField("occupation", e.target.value)
-                      }
-                      className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 shadow-sm"
-                      placeholder="Student / Teacher / Professional"
-                    />
-                  </div>
-
-                  <div className="space-y-3">
-                    <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                      {t("userForm.marriageStatus")}
-                    </Label>
-                    <Select
-                      value={formData.marriageStatus}
-                      onValueChange={(value: any) =>
-                        updateField("marriageStatus", value)
-                      }
-                    >
-                      <SelectTrigger className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 shadow-sm">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="single">
-                          {t("userForm.single")}
-                        </SelectItem>
-                        <SelectItem value="married">
-                          {t("userForm.married")}
-                        </SelectItem>
-                        <SelectItem value="divorced">
-                          {t("userForm.divorced")}
-                        </SelectItem>
-                        <SelectItem value="widowed">
-                          {t("userForm.widowed")}
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <Controller
+                    name="marriageStatus"
+                    control={control}
+                    render={({ field }) => (
+                      <div className="space-y-3">
+                        <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                          {t("userForm.marriageStatus")}
+                        </Label>
+                        <Select
+                          value={field.value}
+                          onValueChange={field.onChange}
+                        >
+                          <SelectTrigger className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 shadow-sm">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="single">
+                              {t("userForm.single")}
+                            </SelectItem>
+                            <SelectItem value="married">
+                              {t("userForm.married")}
+                            </SelectItem>
+                            <SelectItem value="divorced">
+                              {t("userForm.divorced")}
+                            </SelectItem>
+                            <SelectItem value="widowed">
+                              {t("userForm.widowed")}
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                  />
                 </div>
               </CardContent>
             </Card>
 
-            {/* Sidebar Cards */}
+            {/* Sidebar Cards - No changes */}
             <div className="space-y-6">
               {/* Disability Information */}
               <Card className="border-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-2xl rounded-3xl border border-slate-200/50 dark:border-slate-800/50">
@@ -408,32 +374,39 @@ export const UserForm: React.FC<UserFormProps> = ({
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                      {t("userForm.hasDisability")}
-                    </Label>
-                    <Switch
-                      checked={formData.disability}
-                      onCheckedChange={(checked) =>
-                        updateField("disability", checked)
-                      }
-                    />
-                  </div>
+                  <Controller
+                    name="disability"
+                    control={control}
+                    render={({ field }) => (
+                      <div className="flex items-center justify-between">
+                        <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                          {t("userForm.hasDisability")}
+                        </Label>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </div>
+                    )}
+                  />
 
-                  {formData.disability && (
-                    <div className="space-y-3">
-                      <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                        {t("userForm.disabilityType")}
-                      </Label>
-                      <Input
-                        value={formData.disabilityType}
-                        onChange={(e) =>
-                          updateField("disabilityType", e.target.value)
-                        }
-                        className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 shadow-sm"
-                        placeholder={t("userForm.disabilityType")}
-                      />
-                    </div>
+                  {disibilityValue && (
+                    <Controller
+                      name="disabilityType"
+                      control={control}
+                      render={({ field }) => (
+                        <div className="space-y-3">
+                          <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                            {t("userForm.disabilityType")}
+                          </Label>
+                          <Input
+                            {...field}
+                            className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 shadow-sm"
+                            placeholder={t("userForm.disabilityType")}
+                          />
+                        </div>
+                      )}
+                    />
                   )}
                 </CardContent>
               </Card>
@@ -447,64 +420,89 @@ export const UserForm: React.FC<UserFormProps> = ({
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="space-y-3">
-                    <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                      {t("userForm.country")}
-                    </Label>
-                    <Input
-                      value={formData.country}
-                      onChange={(e) => updateField("country", e.target.value)}
-                      className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 shadow-sm"
+                  <Controller
+                    name="country"
+                    control={control}
+                    render={({ field }) => (
+                      <div className="space-y-3">
+                        <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                          {t("userForm.country")}
+                        </Label>
+                        <Input
+                          {...field}
+                          className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 shadow-sm"
+                        />
+                      </div>
+                    )}
+                  />
+
+                  <div className="grid gap-4 grid-cols-2">
+                    <Controller
+                      name="region"
+                      control={control}
+                      render={({ field }) => (
+                        <div className="space-y-3">
+                          <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                            {t("userForm.region")}
+                          </Label>
+                          <Input
+                            {...field}
+                            className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 shadow-sm"
+                          />
+                        </div>
+                      )}
+                    />
+
+                    <Controller
+                      name="zone"
+                      control={control}
+                      render={({ field }) => (
+                        <div className="space-y-3">
+                          <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                            {t("userForm.zone")}
+                          </Label>
+                          <Input
+                            {...field}
+                            className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 shadow-sm"
+                          />
+                        </div>
+                      )}
                     />
                   </div>
 
                   <div className="grid gap-4 grid-cols-2">
-                    <div className="space-y-3">
-                      <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                        {t("userForm.region")}
-                      </Label>
-                      <Input
-                        value={formData.region}
-                        onChange={(e) => updateField("region", e.target.value)}
-                        className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 shadow-sm"
-                      />
-                    </div>
+                    <Controller
+                      name="woreda"
+                      control={control}
+                      render={({ field }) => (
+                        <div className="space-y-3">
+                          <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                            {t("userForm.woreda")}
+                          </Label>
+                          <Input
+                            {...field}
+                            className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 shadow-sm"
+                          />
+                        </div>
+                      )}
+                    />
 
-                    <div className="space-y-3">
-                      <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                        {t("userForm.zone")}
-                      </Label>
-                      <Input
-                        value={formData.zone}
-                        onChange={(e) => updateField("zone", e.target.value)}
-                        className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 shadow-sm"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid gap-4 grid-cols-2">
-                    <div className="space-y-3">
-                      <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                        {t("userForm.woreda")}
-                      </Label>
-                      <Input
-                        value={formData.woreda}
-                        onChange={(e) => updateField("woreda", e.target.value)}
-                        className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 shadow-sm"
-                      />
-                    </div>
-
-                    <div className="space-y-3">
-                      <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                        {t("userForm.church")}
-                      </Label>
-                      <Input
-                        value={formData.church}
-                        onChange={(e) => updateField("church", e.target.value)}
-                        className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 shadow-sm"
-                        placeholder="St. George Cathedral"
-                      />
-                    </div>
+                    <Controller
+                      name="church"
+                      control={control}
+                      render={({ field }) => (
+                        <div className="space-y-3">
+                          <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                            {t("userForm.church")}
+                          </Label>
+                          <Input
+                            {...field}
+                            className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 shadow-sm"
+                            placeholder="St. George Cathedral"
+                          />
+                        </div>
+                      )}
+                    />
                   </div>
                 </CardContent>
               </Card>
@@ -518,79 +516,92 @@ export const UserForm: React.FC<UserFormProps> = ({
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="space-y-3">
-                    <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                      {t("userForm.parentStatus")}
-                    </Label>
-                    <Select
-                      value={formData.parentStatus}
-                      onValueChange={(value: any) =>
-                        updateField("parentStatus", value)
-                      }
-                    >
-                      <SelectTrigger className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 shadow-sm">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="both">
-                          {t("userForm.bothParents")}
-                        </SelectItem>
-                        <SelectItem value="mother">
-                          {t("userForm.motherOnly")}
-                        </SelectItem>
-                        <SelectItem value="father">
-                          {t("userForm.fatherOnly")}
-                        </SelectItem>
-                        <SelectItem value="guardian">
-                          {t("userForm.guardian")}
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <Controller
+                    name="parentStatus"
+                    control={control}
+                    render={({ field }) => (
+                      <div className="space-y-3">
+                        <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                          {t("userForm.parentStatus")}
+                        </Label>
+                        <Select
+                          value={field.value}
+                          onValueChange={field.onChange}
+                        >
+                          <SelectTrigger className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 shadow-sm">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="both">
+                              {t("userForm.bothParents")}
+                            </SelectItem>
+                            <SelectItem value="mother">
+                              {t("userForm.motherOnly")}
+                            </SelectItem>
+                            <SelectItem value="father">
+                              {t("userForm.fatherOnly")}
+                            </SelectItem>
+                            <SelectItem value="guardian">
+                              {t("userForm.guardian")}
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                  />
 
-                  <div className="space-y-3">
-                    <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                      {t("userForm.parentFullName")}
-                    </Label>
-                    <Input
-                      value={formData.parentFullName}
-                      onChange={(e) =>
-                        updateField("parentFullName", e.target.value)
-                      }
-                      className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 shadow-sm"
-                      placeholder={t("userForm.parentFullName")}
-                    />
-                  </div>
+                  <Controller
+                    name="parentFullName"
+                    control={control}
+                    render={({ field }) => (
+                      <div className="space-y-3">
+                        <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                          {t("userForm.parentFullName")}
+                        </Label>
+                        <Input
+                          {...field}
+                          className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 shadow-sm"
+                          placeholder={t("userForm.parentFullName")}
+                        />
+                      </div>
+                    )}
+                  />
 
-                  <div className="space-y-3">
-                    <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                      {t("userForm.parentEmail")}
-                    </Label>
-                    <Input
-                      type="email"
-                      value={formData.parentEmail}
-                      onChange={(e) =>
-                        updateField("parentEmail", e.target.value)
-                      }
-                      className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 shadow-sm"
-                      placeholder="parent@example.com"
-                    />
-                  </div>
+                  <Controller
+                    name="parentEmail"
+                    control={control}
+                    render={({ field }) => (
+                      <div className="space-y-3">
+                        <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                          {t("userForm.parentEmail")}
+                        </Label>
+                        <Input
+                          type="email"
+                          {...field}
+                          className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 shadow-sm"
+                          placeholder="parent@example.com"
+                        />
+                      </div>
+                    )}
+                  />
 
-                  <div className="space-y-3">
-                    <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                      {t("userForm.parentPhone")}
-                    </Label>
-                    <Input
-                      type="tel"
-                      value={formData.parentPhoneNumber}
-                      onChange={(e) =>
-                        updateField("parentPhoneNumber", e.target.value)
-                      }
-                      className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 shadow-sm"
-                      placeholder="+251922334455"
-                    />
-                  </div>
+                  <Controller
+                    name="parentPhoneNumber"
+                    control={control}
+                    render={({ field }) => (
+                      <div className="space-y-3">
+                        <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                          {t("userForm.parentPhone")}
+                        </Label>
+                        <Input
+                          type="tel"
+                          {...field}
+                          className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 shadow-sm"
+                          placeholder="+251922334455"
+                        />
+                      </div>
+                    )}
+                  />
                 </CardContent>
               </Card>
             </div>
@@ -611,10 +622,10 @@ export const UserForm: React.FC<UserFormProps> = ({
 
             <Button
               type="submit"
-              disabled={isLoading}
+              disabled={isPending}
               className="bg-gradient-to-r from-blue-500 to-violet-500 hover:from-blue-600 hover:to-violet-600 text-white shadow-lg hover:shadow-xl rounded-xl transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading ? (
+              {isPending ? (
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   {t("userForm.saving")}

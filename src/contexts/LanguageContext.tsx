@@ -126,6 +126,7 @@ const translations: Record<Language, Record<string, string>> = {
     "userForm.updateProfile": "Update Profile",
     "userForm.saving": "Saving...",
     "userForm.requiredFields": "Please fill in all required fields",
+    "userForm.password": "Password",
 
     "profile.title": "Profile Settings",
     "profile.subtitle": "Manage your personal information and account settings",
@@ -736,6 +737,8 @@ const translations: Record<Language, Record<string, string>> = {
     "userForm.parentInfo": "ወላጅ/መጠባበቂያ",
     "userForm.parentStatus": "የወላጅ ሁኔታ",
     "userForm.bothParents": "ሁለቱም ወላጆች",
+    "userForm.password": "Password",
+
     "userForm.motherOnly": "እናት ብቻ",
     "userForm.fatherOnly": "አባት ብቻ",
     "userForm.guardian": "መጠባበቂያ",
@@ -1213,6 +1216,8 @@ const translations: Record<Language, Record<string, string>> = {
     "userForm.cancel": "Haqi",
     "userForm.createStudent": "Barataa Uumuu",
     "userForm.updateProfile": "Pirofaayilii Haaraa",
+    "userForm.password": "Password",
+
     "userForm.saving": "Tiksaa jira...",
     "userForm.requiredFields": "Mee bakkawwan barbaachisaa hunda guuti",
     "profile.title": "Qajeelfama Pirofaayilii",

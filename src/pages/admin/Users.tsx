@@ -1,5 +1,4 @@
-import React, { Suspense, useEffect, useState } from "react";
-import { useApp } from "@/contexts/AppContext";
+import React, { useState } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { User } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -48,6 +47,7 @@ import { toast } from "sonner";
 import { UserForm } from "@/components/forms/UserForm";
 import { useQuery } from "@tanstack/react-query";
 import Spinner from "@/components/shared/Spinner";
+import { useUserMutation } from "@/hooks/useUserMutations";
 
 export const Users: React.FC = () => {
   const { t } = useLanguage();
@@ -63,6 +63,7 @@ export const Users: React.FC = () => {
   const [viewUser, setViewUser] = useState<User | null>(null);
   const [editUser, setEditUser] = useState<User | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const { createUser } = useUserMutation();
 
   const API = import.meta.env.VITE_API_URL;
   const {
@@ -166,11 +167,9 @@ export const Users: React.FC = () => {
   };
 
   const handleUserSave = (user: User) => {
-    setEditUser(null);
-    setIsCreateDialogOpen(false);
-    toast.success(
-      user.id ? t("userForm.userUpdated") : t("userForm.userCreated")
-    );
+    createUser.mutate(user);
+    // setEditUser(null);
+    // setIsCreateDialogOpen(false);
   };
 
   const getStatusColor = (status: string) => {
