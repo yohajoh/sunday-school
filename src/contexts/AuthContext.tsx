@@ -55,6 +55,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         const response = await fetch(`${API_BASE}/api/sunday-school/auth/me`, {
           method: "GET",
           credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
         });
 
         if (!response.ok) {
@@ -67,7 +70,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         const data = await response.json();
         return data.data.user;
       } catch (error) {
-        // Don't throw error, return null instead to prevent query from failing
+        console.error("❌ [AuthContext] Error fetching user:", error);
         return null;
       }
     },
@@ -92,7 +95,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       const authenticated = !!user;
 
       setAuthState({
-        user,
+        user: user ?? null,
         isAuthenticated: authenticated,
         isLoading: false,
         isInitialized: true,
@@ -118,14 +121,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       await authMutations.login.mutateAsync({ email, password });
       console.log("✅ [AuthContext] Login mutation completed");
 
-      // Add a small delay to ensure cookies are set
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      // Wait longer to ensure cookies are properly set
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
+      // Invalidate and refetch user data
       await queryClient.invalidateQueries({ queryKey: ["currentUser"] });
 
-      // Force refetch user data
-      await queryClient.refetchQueries({ queryKey: ["currentUser"] });
-      console.log("✅ [AuthContext] User refetched after login");
+      console.log(
+        "✅ [AuthContext] User data invalidated, will refetch automatically"
+      );
     } catch (error) {
       console.error("❌ [AuthContext] Login failed:", error);
       throw error;
@@ -134,7 +138,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const register = async (userData: User): Promise<void> => {
     await authMutations.register.mutateAsync(userData);
-    // Refetch user data immediately after registration
+    // Wait and then refetch user data
+    await new Promise((resolve) => setTimeout(resolve, 1000));
     await queryClient.invalidateQueries({ queryKey: ["currentUser"] });
   };
 
@@ -148,6 +153,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       isLoading: false,
       isInitialized: true,
     });
+    // Clear all queries
+    queryClient.clear();
   };
 
   const updateProfile = async (userData: Partial<User>): Promise<void> => {

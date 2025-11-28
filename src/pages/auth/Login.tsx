@@ -41,6 +41,7 @@ export const Login: React.FC = () => {
   // Get the intended destination before login
   const from = (location.state as any)?.from?.pathname || "/";
 
+  // In your Login.tsx, update the handleSubmit function:
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -58,13 +59,11 @@ export const Login: React.FC = () => {
         description: "You have successfully signed in.",
       });
 
-      // Wait longer to ensure cookie is properly set and browser has processed it
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      // Redirect to intended page or home
+      // The AuthContext now handles the refetch automatically
+      // Just redirect after successful login
       navigate(from, { replace: true });
     } catch (error: any) {
-      // Error is already handled in the auth context, but we can add additional handling here
+      // Error is already handled in the auth context
       console.error("Login error:", error);
     } finally {
       setIsLoading(false);
