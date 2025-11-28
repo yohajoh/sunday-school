@@ -53,11 +53,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     queryFn: async (): Promise<User | null> => {
       try {
         const response = await fetch(`${API_BASE}/api/sunday-school/auth/me`, {
-          method: "GET",
           credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
         });
 
         if (!response.ok) {
