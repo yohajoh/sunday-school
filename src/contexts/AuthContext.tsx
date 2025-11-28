@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { User } from "@/types";
-import { useAuthMutations } from "@/hooks/useAuthMutations";
+import { useAuthMutations, getStoredToken } from "@/hooks/useAuthMutations";
 
 interface AuthContextType {
   user: User | null;
@@ -41,6 +41,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const authMutations = useAuthMutations();
 
   // Fetch current user with better error handling
+  // contexts/AuthContext.tsx - Update the useQuery options
   const {
     data: user,
     isLoading: queryLoading,
@@ -52,12 +53,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     queryKey: ["currentUser"],
     queryFn: async (): Promise<User | null> => {
       try {
+        const token = getStoredToken();
+        const headers: HeadersInit = {
+          "Content-Type": "application/json",
+        };
+
+        // Add Authorization header if token exists in localStorage
+        if (token) {
+          headers["Authorization"] = `Bearer ${token}`;
+        }
+
         const response = await fetch(`${API_BASE}/api/sunday-school/auth/me`, {
+          method: "GET",
           credentials: "include",
+          headers,
         });
 
         if (!response.ok) {
           if (response.status === 401) {
+            // If unauthorized, remove the stored token
+            localStorage.removeItem("auth_token");
             return null;
           }
           throw new Error(`Failed to fetch user: ${response.status}`);
@@ -67,13 +82,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         return data.data.user;
       } catch (error) {
         console.error("❌ [AuthContext] Error fetching user:", error);
+        localStorage.removeItem("auth_token");
         return null;
       }
     },
     retry: 1,
     retryDelay: 1000,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes (cache time)
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false, // Add this to prevent refetch on focus
+    refetchOnMount: false, // Add this to prevent refetch on mount after logout
   });
 
   // Update authentication state with better logic
@@ -139,20 +157,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     await queryClient.invalidateQueries({ queryKey: ["currentUser"] });
   };
 
+  // contexts/AuthContext.tsx - Update logout function
   const logout = async (): Promise<void> => {
     console.log("🚪 [AuthContext] Logout initiated");
-    await authMutations.logout.mutateAsync();
-    // Immediately update local state
-    setAuthState({
-      user: null,
-      isAuthenticated: false,
-      isLoading: false,
-      isInitialized: true,
-    });
-    // Clear all queries
-    queryClient.clear();
-  };
+    try {
+      // Immediately update local state FIRST to prevent auto-refetch issues
+      setAuthState({
+        user: null,
+        isAuthenticated: false,
+        isLoading: false,
+        isInitialized: true,
+      });
 
+      // Clear queries BEFORE calling logout mutation
+      queryClient.removeQueries();
+      queryClient.clear();
+
+      // Then call the logout mutation
+      await authMutations.logout.mutateAsync();
+
+      console.log("✅ [AuthContext] Logout completed successfully");
+    } catch (error) {
+      console.error("❌ [AuthContext] Logout error:", error);
+      // Even if mutation fails, ensure we're logged out locally
+      setAuthState({
+        user: null,
+        isAuthenticated: false,
+        isLoading: false,
+        isInitialized: true,
+      });
+      queryClient.removeQueries();
+      queryClient.clear();
+      localStorage.removeItem("auth_token");
+    }
+  };
   const updateProfile = async (userData: Partial<User>): Promise<void> => {
     console.log("🔄 [AuthContext] Calling updateProfile with:", userData);
     try {

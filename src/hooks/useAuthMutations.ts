@@ -29,6 +29,24 @@ interface ErrorResponse {
 
 const API_BASE = import.meta.env.VITE_API_URL;
 
+// Helper function to store token
+export const storeToken = (token: string) => {
+  // Make sure this is exported
+  localStorage.setItem("auth_token", token);
+};
+
+// Helper function to get token
+export const getStoredToken = (): string | null => {
+  // Make sure this is exported
+  return localStorage.getItem("auth_token");
+};
+
+// Helper function to remove token
+export const removeToken = () => {
+  // Make sure this is exported
+  localStorage.removeItem("auth_token");
+};
+
 export const useAuthMutations = () => {
   const queryClient = useQueryClient();
 
@@ -102,6 +120,7 @@ export const useAuthMutations = () => {
   });
 
   // Logout Mutation
+  // hooks/useAuthMutations.ts - Update logout mutation
   const logoutMutation = useMutation<void, ErrorResponse, void>({
     mutationFn: async () => {
       const response = await fetch(
@@ -118,11 +137,21 @@ export const useAuthMutations = () => {
       }
     },
     onSuccess: () => {
-      toast.success("Logged out successfully");
-      queryClient.removeQueries({ queryKey: ["currentUser"] });
+      // Remove from localStorage first
+      removeToken();
+
+      // Clear ALL queries from cache
+      queryClient.removeQueries();
       queryClient.clear();
+
+      toast.success("Logged out successfully");
     },
     onError: (error: ErrorResponse) => {
+      // Even if there's an error, clear local auth state
+      removeToken();
+      queryClient.removeQueries();
+      queryClient.clear();
+
       toast.error("Logout failed", {
         description: error.message,
       });
