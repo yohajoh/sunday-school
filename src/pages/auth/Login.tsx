@@ -41,10 +41,10 @@ export const Login: React.FC = () => {
   // Get the intended destination before login
   const from = (location.state as any)?.from?.pathname || "/";
 
+  // In your Login component - update the handleSubmit function
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Basic validation
     if (!formData.email || !formData.password) {
       toast.error("Please fill in all fields");
       return;
@@ -54,17 +54,18 @@ export const Login: React.FC = () => {
 
     try {
       await login(formData.email, formData.password);
-      toast.success("Welcome back!", {
-        description: "You have successfully signed in.",
-      });
-      // Redirect to intended page or home
-      console.log(
-        "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffcc "
-      );
-      navigate("/", { replace: true });
+
+      // Wait a bit more for the auth state to fully update
+      setTimeout(() => {
+        toast.success("Welcome back!", {
+          description: "You have successfully signed in.",
+        });
+        console.log("✅ [Login] Redirecting to dashboard...");
+        navigate("/", { replace: true });
+      }, 500);
     } catch (error: any) {
-      // Error is already handled in the auth context, but we can add additional handling here
       console.error("Login error:", error);
+      // Error is already handled in auth context
     } finally {
       setIsLoading(false);
     }
