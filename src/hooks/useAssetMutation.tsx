@@ -22,6 +22,8 @@ export const useCreateAsset = (): UseMutationResult<
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include",
+
         body: JSON.stringify(assetData),
       });
       if (!res.ok) {
@@ -62,6 +64,8 @@ export const useUpdateAsset = (): UseMutationResult<
           headers: {
             "Content-Type": "application/json",
           },
+          credentials: "include",
+
           body: JSON.stringify(assetData.updates),
         }
       );
@@ -97,6 +101,7 @@ export const useDeleteAsset = (): UseMutationResult<
     mutationFn: async (assetId: string) => {
       const res = await fetch(`${API}/api/sunday-school/assets/${assetId}`, {
         method: "DELETE",
+        credentials: "include",
       });
 
       if (!res.ok) {

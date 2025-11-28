@@ -22,7 +22,7 @@ interface PostCardProps {
   comments?: any[]; // Comments passed from parent component
   onUpdate?: (post: Post) => void;
   showActions?: boolean;
-  currentUser?: any;
+  user?: any;
   onToggleComments?: () => void;
   showComments?: boolean;
   commentInput?: string;
@@ -36,7 +36,7 @@ export const PostCard: React.FC<PostCardProps> = ({
   comments = [], // Default to empty array
   onUpdate,
   showActions = true,
-  currentUser,
+  user,
   onToggleComments,
   showComments = false,
   commentInput = "",
@@ -49,9 +49,9 @@ export const PostCard: React.FC<PostCardProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Check if current user has liked this post
-  const isLiked = currentUser
+  const isLiked = user
     ? (post.likes || []).some(
-        (like: any) => like._id === currentUser.id || like === currentUser.id
+        (like: any) => like._id === user.id || like === user.id
       )
     : false;
 
@@ -60,7 +60,7 @@ export const PostCard: React.FC<PostCardProps> = ({
     commentInput !== undefined ? commentInput : localCommentText;
 
   const handleLike = () => {
-    if (!currentUser) {
+    if (!user) {
       toast.error("Please login to like posts");
       return;
     }
@@ -71,7 +71,7 @@ export const PostCard: React.FC<PostCardProps> = ({
   };
 
   const handleAddComment = async () => {
-    if (!currentUser) {
+    if (!user) {
       toast.error("Please login to comment");
       return;
     }
@@ -375,17 +375,16 @@ export const PostCard: React.FC<PostCardProps> = ({
                           </p>
 
                           {/* Show if this comment is from the current user */}
-                          {currentUser &&
-                            comment.authorId === currentUser.id && (
-                              <div className="mt-2">
-                                <Badge
-                                  variant="outline"
-                                  className="text-xs bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800"
-                                >
-                                  Your comment
-                                </Badge>
-                              </div>
-                            )}
+                          {user && comment.authorId === user.id && (
+                            <div className="mt-2">
+                              <Badge
+                                variant="outline"
+                                className="text-xs bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800"
+                              >
+                                Your comment
+                              </Badge>
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -406,12 +405,12 @@ export const PostCard: React.FC<PostCardProps> = ({
               )}
 
               {/* Add Comment - Displayed BELOW the comments list */}
-              {currentUser && (
+              {user && (
                 <div className="flex gap-3 sm:gap-4 pt-4 border-t border-slate-200 dark:border-slate-600">
                   <Avatar className="h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0 shadow-md">
                     <AvatarFallback className="bg-gradient-to-br from-blue-500 to-violet-500 text-white font-semibold text-xs sm:text-sm">
-                      {currentUser
-                        ? `${currentUser.firstName?.[0]}${currentUser.lastName?.[0]}`
+                      {user
+                        ? `${user.firstName?.[0]}${user.lastName?.[0]}`
                         : "U"}
                     </AvatarFallback>
                   </Avatar>

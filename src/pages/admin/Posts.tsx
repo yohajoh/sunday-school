@@ -14,6 +14,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -47,6 +48,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { PostForm } from "@/components/forms/PostForm";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const Posts: React.FC = () => {
   const { t } = useLanguage();
@@ -64,6 +66,7 @@ export const Posts: React.FC = () => {
     direction: "asc" | "desc";
   } | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+  const { user } = useAuth();
 
   const [viewPost, setViewPost] = useState<Post | null>(null);
   const [editPost, setEditPost] = useState<Post | null>(null);
@@ -77,7 +80,7 @@ export const Posts: React.FC = () => {
   }>({});
 
   // Current user ID
-  const currentUserId = "69181ab1b5ad009032921d2a";
+  const currentUserId = user?._id;
 
   // Fetch posts using React Query
   const {
@@ -87,7 +90,9 @@ export const Posts: React.FC = () => {
   } = useQuery({
     queryKey: ["posts"],
     queryFn: async () => {
-      const response = await fetch(`${API}/api/sunday-school/posts`);
+      const response = await fetch(`${API}/api/sunday-school/posts`, {
+        credentials: "include",
+      });
       if (!response.ok) {
         throw new Error("Failed to fetch posts");
       }
@@ -99,7 +104,8 @@ export const Posts: React.FC = () => {
   // Fetch ALL comments for each post during initial page load
   const fetchCommentsForPost = async (postId: string) => {
     const response = await fetch(
-      `${API}/api/sunday-school/comments/post/${postId}`
+      `${API}/api/sunday-school/comments/post/${postId}`,
+      { credentials: "include" }
     );
     if (!response.ok) {
       throw new Error("Failed to fetch comments");
@@ -158,10 +164,12 @@ export const Posts: React.FC = () => {
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include",
+
         body: JSON.stringify({
           postId,
           text,
-          author: "Admin User",
+          author: user?.firstName,
           authorId: currentUserId,
         }),
       });
@@ -198,6 +206,8 @@ export const Posts: React.FC = () => {
           headers: {
             "Content-Type": "application/json",
           },
+          credentials: "include",
+
           body: JSON.stringify({ userId: currentUserId }),
         }
       );
@@ -230,6 +240,8 @@ export const Posts: React.FC = () => {
           headers: {
             "Content-Type": "application/json",
           },
+          credentials: "include",
+
           body: JSON.stringify({ userId: currentUserId }),
         }
       );
@@ -257,6 +269,7 @@ export const Posts: React.FC = () => {
     mutationFn: async (postId: string) => {
       const response = await fetch(`${API}/api/sunday-school/posts/${postId}`, {
         method: "DELETE",
+        credentials: "include",
       });
 
       if (!response.ok) {
@@ -1103,7 +1116,7 @@ export const Posts: React.FC = () => {
                             </AvatarFallback>
                           </Avatar>
                           <span className="text-slate-700 dark:text-slate-300 text-sm truncate min-w-0 max-w-full">
-                            {post.author || "Unknown Author"}
+                            {post.authorId?.firstName || "Unknown Author"}
                           </span>
                         </div>
                       </TableCell>
@@ -1521,6 +1534,12 @@ export const Posts: React.FC = () => {
 
       {/* Post Detail Dialog */}
       <Dialog open={!!viewPost} onOpenChange={() => setViewPost(null)}>
+        <DialogHeader>
+          <DialogTitle>
+            <div></div>
+          </DialogTitle>
+        </DialogHeader>
+        <DialogDescription></DialogDescription>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-gradient-to-br from-white to-slate-50 dark:from-slate-800 dark:to-slate-900 border-0 shadow-2xl rounded-2xl sm:rounded-3xl mx-4 w-[95vw]">
           {viewPost && (
             <div className="p-6">
@@ -1729,6 +1748,7 @@ export const Posts: React.FC = () => {
               <Edit className="h-5 w-5 flex-shrink-0" />
               <span className="truncate">Edit Post</span>
             </DialogTitle>
+            <DialogDescription></DialogDescription>
           </DialogHeader>
           {editPost && (
             <PostForm

@@ -60,7 +60,8 @@ const useUserGalleries = (searchTerm: string, category: string) => {
 
       // Remove any limits to get ALL images
       const response = await fetch(
-        `${API}/api/sunday-school/user/gallery?${params}`
+        `${API}/api/sunday-school/user/gallery?${params}`,
+        { credentials: "include" }
       );
       if (!response.ok) {
         throw new Error(`Failed to fetch galleries: ${response.status}`);
@@ -83,7 +84,8 @@ const useUserCategories = () => {
     queryKey: ["user-gallery-categories"],
     queryFn: async () => {
       const response = await fetch(
-        `${API}/api/sunday-school/user/gallery/categories`
+        `${API}/api/sunday-school/user/gallery/categories`,
+        { credentials: "include" }
       );
       const data = await response.json();
 
@@ -157,56 +159,46 @@ export const UserGallery: React.FC = () => {
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50/20 to-blue-50/30 dark:from-slate-900 dark:via-emerald-950/10 dark:to-blue-950/10">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-orange-50/20 to-amber-50/30 dark:from-slate-900 dark:via-orange-950/10 dark:to-amber-950/5">
       <div className="space-y-6">
         {/* Premium Hero Section - Mobile Optimized */}
-        <div className="relative overflow-hidden rounded-2xl lg:rounded-3xl bg-gradient-to-br from-emerald-500 via-blue-600 to-purple-700 p-4 lg:p-8 text-white mx-2 lg:mx-0">
-          <div className="relative z-10 text-center">
-            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-xl lg:rounded-2xl px-4 py-2 lg:px-6 lg:py-3 border border-white/20 mb-4 lg:mb-6">
-              <Sparkles className="h-4 w-4 lg:h-6 lg:w-6 text-yellow-300" />
-              <span className="text-sm lg:text-lg font-semibold">
-                Premium Gallery
-              </span>
-            </div>
-
+        <div className="relative overflow-hidden rounded-2xl lg:rounded-3xl bg-gradient-to-br from-slate-800 via-orange-900 to-amber-900 p-6 sm:p-8 text-white border border-orange-500/20 lg:mx-0">
+          <div className="relative z-10 text-center flex justify-between">
             <h1 className="text-2xl lg:text-5xl font-bold mb-3 lg:mb-4 bg-gradient-to-r from-white to-emerald-100 bg-clip-text text-transparent px-2">
               Memory Gallery
             </h1>
 
-            {/* Quick Stats - Mobile Responsive */}
-            <div className="flex justify-center gap-4 lg:gap-8 mt-6 lg:mt-8">
-              <div className="text-center">
-                <div className="text-xl lg:text-3xl font-bold text-white">
-                  {galleries.length}
+            <div>
+              {/* Quick Stats - Mobile Responsive */}
+              <div className="flex justify-center gap-4 lg:gap-8 mt-6 lg:mt-8">
+                <div className="text-center">
+                  <div className="text-xl lg:text-3xl font-bold text-white">
+                    {galleries.length}
+                  </div>
+                  <div className="text-emerald-200 text-xs lg:text-base">
+                    Total Photos
+                  </div>
                 </div>
-                <div className="text-emerald-200 text-xs lg:text-base">
-                  Total Photos
+                <div className="text-center">
+                  <div className="text-xl lg:text-3xl font-bold text-white">
+                    {[...new Set(galleries.map((g) => g.category))].length}
+                  </div>
+                  <div className="text-blue-200 text-xs lg:text-base">
+                    Categories
+                  </div>
+                </div>
+                <div className="text-center">
+                  <div className="text-xl lg:text-3xl font-bold text-white">
+                    {Math.round(
+                      galleries.reduce((acc, g) => acc + g.bytes, 0) /
+                        (1024 * 1024)
+                    )}
+                  </div>
+                  <div className="text-purple-200 text-xs lg:text-base">
+                    MB Total
+                  </div>
                 </div>
               </div>
-              <div className="text-center">
-                <div className="text-xl lg:text-3xl font-bold text-white">
-                  {[...new Set(galleries.map((g) => g.category))].length}
-                </div>
-                <div className="text-blue-200 text-xs lg:text-base">
-                  Categories
-                </div>
-              </div>
-              <div className="text-center">
-                <div className="text-xl lg:text-3xl font-bold text-white">
-                  {Math.round(
-                    galleries.reduce((acc, g) => acc + g.bytes, 0) /
-                      (1024 * 1024)
-                  )}
-                </div>
-                <div className="text-purple-200 text-xs lg:text-base">
-                  MB Total
-                </div>
-              </div>
-            </div>
-
-            {/* Total Images Info */}
-            <div className="text-center text-emerald-200 text-sm mt-4">
-              Displaying all {galleries.length} memories
             </div>
           </div>
 

@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { AdminSidebar } from "./AdminSidebar";
 import { AdminHeader } from "./AdminHeader";
-import { useApp } from "@/contexts/AppContext";
 import { Menu, Bell, User, Languages, SunMoon, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
@@ -10,6 +9,7 @@ import { LanguageSwitcher } from "@/components/shared/LanguageSwitcher";
 import { ThemeToggle } from "@/components/shared/ThemeToggle";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const AdminLayout: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -17,7 +17,7 @@ export const AdminLayout: React.FC = () => {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [showMobileNotifications, setShowMobileNotifications] = useState(false);
   const [showMobileProfile, setShowMobileProfile] = useState(false);
-  const { currentUser } = useApp();
+  const { user } = useAuth();
   const location = useLocation();
 
   // Detect mobile device
@@ -60,7 +60,7 @@ export const AdminLayout: React.FC = () => {
     return <Outlet />;
   }
 
-  if (!currentUser) {
+  if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-blue-950">
         <div className="text-center">
@@ -161,19 +161,19 @@ export const AdminLayout: React.FC = () => {
         <div className="flex items-center gap-3">
           <Avatar className="h-10 w-10 border-2 border-white dark:border-slate-800 shadow-md">
             <AvatarFallback className="bg-gradient-to-br from-blue-500 to-violet-500 text-white font-semibold">
-              {currentUser?.firstName?.[0]}
-              {currentUser?.lastName?.[0]}
+              {user?.firstName?.[0]}
+              {user?.middleName?.[0]}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-slate-800 dark:text-white text-sm truncate">
-              {currentUser?.firstName} {currentUser?.lastName}
+              {user?.firstName} {user?.middleName}
             </h3>
             <p className="text-xs text-slate-600 dark:text-slate-400 truncate">
-              {currentUser?.email}
+              {user?.email}
             </p>
             <Badge variant="secondary" className="mt-1 text-xs capitalize">
-              {currentUser?.role}
+              {user?.role}
             </Badge>
           </div>
         </div>
@@ -251,7 +251,7 @@ export const AdminLayout: React.FC = () => {
                     Sunday School
                   </h1>
                   <p className="text-xs text-slate-600 dark:text-slate-400 truncate">
-                    {currentUser?.firstName} {currentUser?.lastName}
+                    {user?.firstName} {user?.middleName}
                   </p>
                 </div>
               </div>
@@ -302,8 +302,8 @@ export const AdminLayout: React.FC = () => {
                   >
                     <Avatar className="h-6 w-6">
                       <AvatarFallback className="bg-gradient-to-br from-blue-500 to-violet-500 text-white text-xs">
-                        {currentUser?.firstName?.[0]}
-                        {currentUser?.lastName?.[0]}
+                        {user?.firstName?.[0]}
+                        {user?.middleName?.[0]}
                       </AvatarFallback>
                     </Avatar>
                   </Button>

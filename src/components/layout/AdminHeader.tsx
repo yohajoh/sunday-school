@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from "react";
-import { useApp } from "@/contexts/AppContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
 import { LanguageSwitcher } from "@/components/shared/LanguageSwitcher";
@@ -19,7 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 
 export const AdminHeader: React.FC = () => {
-  const { currentUser } = useApp();
+  const { user } = useAuth();
   const { logout } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
@@ -204,16 +203,16 @@ export const AdminHeader: React.FC = () => {
             >
               <Avatar className="h-8 w-8 border-2 border-white dark:border-slate-800 shadow-sm">
                 <AvatarFallback className="bg-gradient-to-br from-blue-500 to-violet-500 text-white font-semibold text-sm">
-                  {currentUser?.firstName?.[0]}
-                  {currentUser?.lastName?.[0]}
+                  {user?.firstName?.[0]}
+                  {user?.middleName?.[0]}
                 </AvatarFallback>
               </Avatar>
               <div className="hidden sm:block text-left">
                 <p className="text-sm font-medium text-slate-800 dark:text-white">
-                  {currentUser?.firstName} {currentUser?.lastName}
+                  {user?.firstName} {user?.middleName}
                 </p>
                 <p className="text-xs text-slate-500 dark:text-slate-400 capitalize">
-                  {currentUser?.role}
+                  {user?.role}
                 </p>
               </div>
               <ChevronDown
@@ -230,22 +229,22 @@ export const AdminHeader: React.FC = () => {
                   <div className="flex items-center gap-3">
                     <Avatar className="h-12 w-12 border-2 border-white dark:border-slate-800 shadow-md">
                       <AvatarFallback className="bg-gradient-to-br from-blue-500 to-violet-500 text-white font-semibold">
-                        {currentUser?.firstName?.[0]}
-                        {currentUser?.lastName?.[0]}
+                        {user?.firstName?.[0]}
+                        {user?.middleName?.[0]}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
                       <h3 className="font-semibold text-slate-800 dark:text-white truncate">
-                        {currentUser?.firstName} {currentUser?.lastName}
+                        {user?.firstName} {user?.middleName}
                       </h3>
                       <p className="text-sm text-slate-600 dark:text-slate-400 truncate">
-                        {currentUser?.email}
+                        {user?.email}
                       </p>
                       <Badge
                         variant="secondary"
                         className="mt-1 text-xs capitalize"
                       >
-                        {currentUser?.role}
+                        {user?.role}
                       </Badge>
                     </div>
                   </div>

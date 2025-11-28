@@ -109,7 +109,10 @@ export const AssetForm: React.FC<AssetFormProps> = ({
     queryKey: ["users"],
     queryFn: async function fetchUsers() {
       try {
-        const res = await fetch(`${API}/api/sunday-school/users`);
+        const res = await fetch(`${API}/api/sunday-school/users`, {
+          method: "GET",
+          credentials: "include",
+        });
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`);
         }

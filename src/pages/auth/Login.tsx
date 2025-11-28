@@ -21,23 +21,35 @@ import {
   Users,
   Heart,
 } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 
 export const Login: React.FC = () => {
   const { t } = useLanguage();
-  const { login } = useAuth();
+  const { login, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
-    password: "password",
+    password: "",
     rememberMe: false,
   });
 
+  // Get the intended destination before login
+  const from = (location.state as any)?.from?.pathname || "/";
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Basic validation
+    if (!formData.email || !formData.password) {
+      toast.error("Please fill in all fields");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -45,9 +57,11 @@ export const Login: React.FC = () => {
       toast.success("Welcome back!", {
         description: "You have successfully signed in.",
       });
-      navigate("/");
-    } catch (error) {
-      toast.error(t("auth.loginError"));
+      // Redirect to intended page or home
+      navigate(from, { replace: true });
+    } catch (error: any) {
+      // Error is already handled in the auth context, but we can add additional handling here
+      console.error("Login error:", error);
     } finally {
       setIsLoading(false);
     }
@@ -57,18 +71,39 @@ export const Login: React.FC = () => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const demoLogin = (isAdmin: boolean) => {
-    setFormData({
+  const demoLogin = async (isAdmin: boolean) => {
+    const demoCredentials = {
       email: isAdmin ? "admin@sundayschool.org" : "user@church.org",
-      password: "password",
+      password: "password123", // Make sure this matches your demo users' passwords
+    };
+
+    setFormData({
+      ...demoCredentials,
       rememberMe: false,
     });
+
+    setIsLoading(true);
+    try {
+      await login(demoCredentials.email, demoCredentials.password);
+      toast.success(`Welcome ${isAdmin ? "Admin" : "Member"}!`, {
+        description: "Demo login successful.",
+      });
+      navigate(from, { replace: true });
+    } catch (error: any) {
+      toast.error("Demo login failed", {
+        description: "Please make sure demo users exist in the database.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  // Combined loading state
+  const isSubmitting = isLoading || authLoading;
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">
       {/* Left Side - Login Form */}
-
       <div className="flex-1 flex flex-col gap-4 p-4 lg:p-8 bg-gradient-to-br from-amber-50 via-orange-50/30 to-rose-50/50 dark:from-slate-900 dark:via-amber-950/20 dark:to-rose-950/10 lg:gap-20">
         <div className="flex items-center gap-1 justify-end">
           <LanguageSwitcher />
@@ -76,7 +111,7 @@ export const Login: React.FC = () => {
         </div>
 
         <div className="flex justify-center">
-          <Card className=" bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-2xl rounded-3xl border border-slate-200/50 dark:border-slate-800/50">
+          <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-2xl rounded-3xl border border-slate-200/50 dark:border-slate-800/50">
             <CardHeader className="text-center pb-4">
               <div className="flex justify-center mb-4 lg:hidden">
                 <div className="p-3 bg-gradient-to-br from-amber-500 to-orange-500 rounded-2xl shadow-lg">
@@ -108,7 +143,8 @@ export const Login: React.FC = () => {
                       value={formData.email}
                       onChange={(e) => updateField("email", e.target.value)}
                       required
-                      className="pl-10 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-300 text-sm lg:text-base"
+                      disabled={isSubmitting}
+                      className="pl-10 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-300 text-sm lg:text-base disabled:opacity-50 disabled:cursor-not-allowed"
                       placeholder={t("auth.emailPlaceholder")}
                     />
                   </div>
@@ -129,13 +165,15 @@ export const Login: React.FC = () => {
                       value={formData.password}
                       onChange={(e) => updateField("password", e.target.value)}
                       required
-                      className="pl-10 pr-10 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-300 text-sm lg:text-base"
+                      disabled={isSubmitting}
+                      className="pl-10 pr-10 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-300 text-sm lg:text-base disabled:opacity-50 disabled:cursor-not-allowed"
                       placeholder={t("auth.passwordPlaceholder")}
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors duration-300"
+                      disabled={isSubmitting}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {showPassword ? (
                         <EyeOff className="h-4 w-4" />
@@ -154,7 +192,8 @@ export const Login: React.FC = () => {
                       onCheckedChange={(checked) =>
                         updateField("rememberMe", checked)
                       }
-                      className="border-slate-300 dark:border-slate-600 data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500"
+                      disabled={isSubmitting}
+                      className="border-slate-300 dark:border-slate-600 data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500 disabled:opacity-50"
                     />
                     <Label
                       htmlFor="rememberMe"
@@ -165,7 +204,8 @@ export const Login: React.FC = () => {
                   </div>
                   <button
                     type="button"
-                    className="text-sm text-amber-600 dark:text-amber-400 hover:underline whitespace-nowrap"
+                    disabled={isSubmitting}
+                    className="text-sm text-amber-600 dark:text-amber-400 hover:underline whitespace-nowrap disabled:opacity-50"
                   >
                     {t("auth.forgotPassword")}
                   </button>
@@ -173,10 +213,10 @@ export const Login: React.FC = () => {
 
                 <Button
                   type="submit"
-                  disabled={isLoading}
-                  className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-lg hover:shadow-xl rounded-xl transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed text-sm lg:text-base"
+                  disabled={isSubmitting}
+                  className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-lg hover:shadow-xl rounded-xl transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 text-sm lg:text-base"
                 >
-                  {isLoading ? (
+                  {isSubmitting ? (
                     <div className="flex items-center gap-2">
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                       {t("auth.signingIn")}
@@ -190,39 +230,6 @@ export const Login: React.FC = () => {
                   )}
                 </Button>
               </form>
-
-              {/* Demo Credentials */}
-              <div className="space-y-3">
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-slate-200 dark:border-slate-700"></div>
-                  </div>
-                  <div className="relative flex justify-center text-sm">
-                    <span className="px-2 bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400">
-                      {t("auth.demoCredentials")}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => demoLogin(true)}
-                    className="border-amber-200 dark:border-amber-800 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-xl text-xs lg:text-sm"
-                  >
-                    {t("auth.adminAccess")}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => demoLogin(false)}
-                    className="border-orange-200 dark:border-orange-800 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-xl text-xs lg:text-sm"
-                  >
-                    {t("auth.memberAccess")}
-                  </Button>
-                </div>
-              </div>
 
               <div className="text-center">
                 <p className="text-sm text-slate-600 dark:text-slate-400">

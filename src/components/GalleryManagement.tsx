@@ -71,7 +71,8 @@ const useGalleries = (searchTerm: string, category: string) => {
 
       // Remove any limits to get ALL images
       const response = await fetch(
-        `${API}/api/sunday-school/admin/gallery?${params}`
+        `${API}/api/sunday-school/admin/gallery?${params}`,
+        { credentials: "include" }
       );
       if (!response.ok) {
         throw new Error(`Failed to fetch galleries: ${response.status}`);
@@ -94,7 +95,8 @@ const useCategories = () => {
     queryKey: ["gallery-categories"],
     queryFn: async () => {
       const response = await fetch(
-        `${API}/api/sunday-school/admin/gallery/categories/all`
+        `${API}/api/sunday-school/admin/gallery/categories/all`,
+        { credentials: "include" }
       );
       if (!response.ok) {
         throw new Error(`Failed to fetch categories: ${response.status}`);
@@ -120,6 +122,7 @@ const useDeleteGallery = () => {
         `${API}/api/sunday-school/admin/gallery/${galleryId}`,
         {
           method: "DELETE",
+          credentials: "include",
         }
       );
 
@@ -682,7 +685,7 @@ export const GalleryManagement: React.FC = () => {
                                     ).toLocaleDateString()}
                                   </span>
                                   <span className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                                    By {gallery.uploadedBy.firstName}
+                                    By {gallery.uploadedBy?.firstName}
                                   </span>
                                 </div>
                               </div>

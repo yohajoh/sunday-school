@@ -76,20 +76,32 @@ export const Users: React.FC = () => {
       try {
         const res = await fetch(`${API}/api/sunday-school/users`, {
           method: "GET",
+          credentials: "include", // ADD THIS LINE - sends cookies with request
+          headers: {
+            "Content-Type": "application/json",
+          },
         });
+
         if (!res.ok) {
+          // Check if it's an authentication error
+          if (res.status === 401) {
+            throw new Error("Authentication failed. Please log in again.");
+          }
+          if (res.status === 403) {
+            throw new Error("Access denied. Admin privileges required.");
+          }
           throw new Error(`HTTP error! status: ${res.status}`);
         }
+
         const data = await res.json();
         return data.data.data; // Ensure we always return an array
       } catch (err) {
-        console.error("Error fetching users:", err);
-        toast.error("Failed to load users");
+        toast.error(err.message || "Failed to load users");
         return []; // Return empty array on error
       }
     },
-    staleTime: 1000 * 60 + 5,
-    gcTime: 1000 * 60 * 60,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 60, // 1 hour
   });
 
   // Safe data access - ensure userData is always an array
@@ -531,12 +543,12 @@ export const Users: React.FC = () => {
                         <Avatar className="h-8 w-8 sm:h-10 sm:w-10 border border-slate-200 dark:border-slate-600 shadow-sm flex-shrink-0">
                           <AvatarFallback className="bg-gradient-to-br from-blue-500 to-violet-500 text-white font-semibold text-xs sm:text-sm shadow-md">
                             {user.firstName?.[0]}
-                            {user.lastName?.[0]}
+                            {user.middleName?.[0]}
                           </AvatarFallback>
                         </Avatar>
                         <div className="min-w-0 flex-1">
                           <p className="font-semibold text-slate-800 dark:text-white text-sm sm:text-base truncate">
-                            {user.firstName} {user.lastName}
+                            {user.firstName} {user.middleName}
                           </p>
                           <p className="text-xs text-slate-600 dark:text-slate-400 truncate hidden sm:block">
                             {user.church}

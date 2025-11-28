@@ -22,6 +22,8 @@ export const useCreateUser = (): UseMutationResult<
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include",
+
         body: JSON.stringify(userData),
       });
 
@@ -63,6 +65,8 @@ export const useUpdateUser = (): UseMutationResult<
           headers: {
             "Content-Type": "application/json",
           },
+          credentials: "include",
+
           body: JSON.stringify(assetData.updates),
         }
       );
@@ -98,6 +102,7 @@ export const useDeleteUser = (): UseMutationResult<
     mutationFn: async (userId: string) => {
       const res = await fetch(`${API}/api/sunday-school/users/${userId}`, {
         method: "DELETE",
+        credentials: "include",
       });
 
       if (!res.ok) {

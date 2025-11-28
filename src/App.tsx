@@ -1,4 +1,4 @@
-// In your App.js or routing file
+// App.js or App.tsx
 import {
   BrowserRouter as Router,
   Routes,
@@ -20,16 +20,17 @@ import { AdminDashboard } from "@/pages/admin/Dashboard";
 import { Users } from "@/pages/admin/Users";
 import { Assets } from "@/pages/admin/Assets";
 import { Posts } from "@/pages/admin/Posts";
-import { AdminGalleryPage } from "@/pages/admin/AdminGalleryPage"; // ADD THIS
+import { AdminGalleryPage } from "@/pages/admin/AdminGalleryPage";
 
 // User Pages
 import { UserDashboard } from "@/pages/user/Dashboard";
 import { WhatsNew } from "@/pages/user/WhatsNew";
-import { UserGalleryPage } from "@/pages/user/UserGalleryPage"; // ADD THIS
+import { UserGalleryPage } from "@/pages/user/UserGalleryPage";
 
 // Shared Pages
 import { NotFound } from "@/pages/shared/NotFound";
-import { Profile } from "@/pages/shared/Profile"; // Shared profile page
+import { Profile } from "@/pages/shared/Profile";
+import { Unauthorized } from "@/pages/shared/Unauthorized";
 
 // Layout Components
 import { AdminLayout } from "@/components/layout/AdminLayout";
@@ -41,7 +42,14 @@ import { UserForm } from "./components/forms/UserForm";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      staleTime: 5 * 60 * 1000,
+    },
+  },
+});
 
 function App() {
   return (
@@ -60,46 +68,72 @@ function App() {
                     }}
                   />
                   <Routes>
-                    {/* Auth Routes */}
+                    {/* Public Routes */}
                     <Route path="/login" element={<Login />} />
                     <Route path="/signup" element={<Signup />} />
+                    <Route path="/unauthorized" element={<Unauthorized />} />
 
-                    {/* Admin Routes */}
-                    <Route path="/admin" element={<AdminLayout />}>
-                      <Route index element={<AdminDashboard />} />
+                    {/* Root path - redirects based on role */}
+                    <Route
+                      path="/"
+                      element={
+                        <ProtectedRoute>
+                          <div />{" "}
+                          {/* Empty element, will redirect in ProtectedRoute */}
+                        </ProtectedRoute>
+                      }
+                    />
+
+                    {/* Admin Routes - Protected and Admin only */}
+                    <Route
+                      path="/admin/*"
+                      element={
+                        <ProtectedRoute requiredRole="admin">
+                          <AdminLayout />
+                        </ProtectedRoute>
+                      }
+                    >
                       <Route path="dashboard" element={<AdminDashboard />} />
                       <Route path="users" element={<Users />} />
                       <Route path="users/new" element={<UserForm />} />
                       <Route path="assets" element={<Assets />} />
                       <Route path="posts" element={<Posts />} />
+                      <Route path="gallery" element={<AdminGalleryPage />} />
+                      <Route path="profile" element={<Profile />} />
                       <Route
-                        path="gallery"
-                        element={<AdminGalleryPage />}
-                      />{" "}
-                      {/* ADD THIS */}
-                      <Route path="profile" element={<Profile />} />{" "}
-                      {/* Shared profile */}
+                        index
+                        element={<Navigate to="dashboard" replace />}
+                      />
                     </Route>
 
-                    {/* User Routes */}
+                    {/* User Routes - Protected for all authenticated users */}
                     <Route
-                      path="/"
+                      path="/*"
                       element={
                         <ProtectedRoute>
                           <UserLayout />
                         </ProtectedRoute>
                       }
                     >
-                      <Route index element={<UserDashboard />} />
-                      <Route path="profile" element={<Profile />} />{" "}
-                      {/* Shared profile */}
+                      <Route path="dashboard" element={<UserDashboard />} />
+                      <Route path="profile" element={<Profile />} />
                       <Route path="whats-new" element={<WhatsNew />} />
+                      <Route path="gallery" element={<UserGalleryPage />} />
                       <Route
-                        path="gallery"
-                        element={<UserGalleryPage />}
-                      />{" "}
-                      {/* ADD THIS */}
+                        index
+                        element={<Navigate to="dashboard" replace />}
+                      />
                     </Route>
+
+                    {/* Specific role-protected routes */}
+                    <Route
+                      path="/admin-only-page"
+                      element={
+                        <ProtectedRoute requiredRole="admin">
+                          <AdminDashboard />
+                        </ProtectedRoute>
+                      }
+                    />
 
                     {/* Fallback Routes */}
                     <Route path="/404" element={<NotFound />} />

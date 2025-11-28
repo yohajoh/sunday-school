@@ -1,172 +1,180 @@
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  Dispatch,
-} from "react";
+// contexts/AuthContext.tsx
+import React, { createContext, useContext, useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { User } from "@/types";
-import { useApp } from "./AppContext";
+import { useAuthMutations } from "@/hooks/useAuthMutations";
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string) => Promise<void>;
-  signup: (userData: any) => Promise<void>;
-  logout: () => void;
   isLoading: boolean;
-  LoggedOut: string | null;
-  setLoggedOut: Dispatch<string | null>;
+  isAuthenticated: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  register: (userData: User & { password: string }) => Promise<void>;
+  logout: () => Promise<void>;
+  updateProfile: (userData: Partial<User>) => Promise<void>;
+  changePassword: (
+    currentPassword: string,
+    newPassword: string
+  ) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Mock user database
-const mockUsers: User[] = [
-  {
-    id: "1",
-    studentId: "ADMIN001",
-    email: "admin@sundayschool.org",
-    role: "admin",
-    firstName: "System",
-    middleName: "",
-    lastName: "Administrator",
-    sex: "male",
-    phoneNumber: "+251911223344",
-    disability: false,
-    dateOfBirth: "1980-01-01",
-    country: "Ethiopia",
-    region: "Addis Ababa",
-    zone: "Central",
-    woreda: "Kirkos",
-    church: "St. George Cathedral",
-    occupation: "System Administrator",
-    marriageStatus: "married",
-    parentStatus: "both",
-    parentFullName: "Parent Name",
-    parentEmail: "parent@example.com",
-    parentPhoneNumber: "+251922334455",
-    nationalId: "ADMIN123456",
-    joinDate: "2020-01-01",
-    status: "active",
-  },
-  {
-    id: "2",
-    studentId: "USER001",
-    email: "user@church.org",
-    role: "user",
-    firstName: "Test",
-    middleName: "",
-    lastName: "User",
-    sex: "female",
-    phoneNumber: "+251911223355",
-    disability: false,
-    dateOfBirth: "1990-05-15",
-    country: "Ethiopia",
-    region: "Addis Ababa",
-    zone: "Central",
-    woreda: "Bole",
-    church: "St. Mary Church",
-    occupation: "Teacher",
-    marriageStatus: "single",
-    parentStatus: "both",
-    parentFullName: "Parent User",
-    parentEmail: "parentuser@example.com",
-    parentPhoneNumber: "+251922334466",
-    nationalId: "USER123456",
-    joinDate: "2023-01-01",
-    status: "active",
-  },
-];
+const API_BASE = import.meta.env.VITE_API_URL;
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const { addUser } = useApp();
-  const [LoggedOut, setLoggedOut] = useState<string | null>(null);
+  const [authState, setAuthState] = useState<{
+    user: User | null;
+    isAuthenticated: boolean;
+    isLoading: boolean;
+    isInitialized: boolean;
+  }>({
+    user: null,
+    isAuthenticated: false,
+    isLoading: true,
+    isInitialized: false,
+  });
 
+  const queryClient = useQueryClient();
+  const authMutations = useAuthMutations();
+
+  // Fetch current user with better error handling
+  const {
+    data: user,
+    isLoading: queryLoading,
+    error,
+    isError,
+    isSuccess,
+    isFetching,
+  } = useQuery({
+    queryKey: ["currentUser"],
+    queryFn: async (): Promise<User | null> => {
+      try {
+        const response = await fetch(`${API_BASE}/api/sunday-school/auth/me`, {
+          credentials: "include",
+        });
+
+        if (!response.ok) {
+          if (response.status === 401) {
+            return null;
+          }
+          throw new Error(`Failed to fetch user: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return data.data.user;
+      } catch (error) {
+        // Don't throw error, return null instead to prevent query from failing
+        return null;
+      }
+    },
+    retry: 1,
+    retryDelay: 1000,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes (cache time)
+  });
+
+  // Update authentication state with better logic
   useEffect(() => {
-    // Check for stored user session on app start
-    const storedUser = localStorage.getItem("sundayschool-user");
-    if (storedUser) {
-      const userData = JSON.parse(storedUser);
-      setUser(userData);
-    }
-    setIsLoading(false);
-  }, []);
+    console.log("🔄 [AuthContext] Auth state update:", {
+      user: user?.email,
+      queryLoading,
+      isError,
+      isSuccess,
+      isFetching,
+    });
 
-  const login = async (email: string, password: string) => {
-    setIsLoading(true);
+    // If query is finished loading (success or error) and we have user data
+    if (!queryLoading && !isFetching) {
+      const authenticated = !!user;
 
-    // Simulate API call delay
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    // Mock authentication - in real app, this would be an API call
-    const foundUser = mockUsers.find((u) => u.email === email);
-
-    if (!foundUser) {
-      throw new Error("Invalid email or password");
-    }
-
-    // In real app, verify password hash
-    if (password !== "password") {
-      throw new Error("Invalid email or password");
-    }
-
-    setLoggedOut("kjklj");
-    setUser(foundUser);
-
-    setIsLoading(false);
-  };
-
-  const signup = async (userData: any) => {
-    setIsLoading(true);
-
-    // Simulate API call delay
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-
-    // Check if user already exists
-    if (mockUsers.some((u) => u.email === userData.email)) {
-      throw new Error("User with this email already exists");
-    }
-
-    const newUser: User = userData;
-
-    // Add to global state
-    addUser(newUser);
-
-    // Set as current user
-    setUser(newUser);
-
-    setIsLoading(false);
-  };
-
-  const logout = () => {
-    setLoggedOut(null);
-  };
-
-  return (
-    <AuthContext.Provider
-      value={{
+      setAuthState({
         user,
-        login,
-        signup,
-        logout,
-        isLoading,
-        LoggedOut,
-        setLoggedOut,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
-  );
+        isAuthenticated: authenticated,
+        isLoading: false,
+        isInitialized: true,
+      });
+
+      console.log("✅ [AuthContext] Auth state finalized:", {
+        authenticated,
+        user: user?.email,
+        isInitialized: true,
+      });
+    } else {
+      // Still loading
+      setAuthState((prev) => ({
+        ...prev,
+        isLoading: true,
+      }));
+    }
+  }, [user, queryLoading, isError, isSuccess, isFetching]);
+
+  const login = async (email: string, password: string): Promise<void> => {
+    console.log("🔑 [AuthContext] Login initiated");
+    await authMutations.login.mutateAsync({ email, password });
+    // Refetch user data immediately after login
+    await queryClient.invalidateQueries({ queryKey: ["currentUser"] });
+  };
+
+  const register = async (userData: User): Promise<void> => {
+    await authMutations.register.mutateAsync(userData);
+    // Refetch user data immediately after registration
+    await queryClient.invalidateQueries({ queryKey: ["currentUser"] });
+  };
+
+  const logout = async (): Promise<void> => {
+    console.log("🚪 [AuthContext] Logout initiated");
+    await authMutations.logout.mutateAsync();
+    // Immediately update local state
+    setAuthState({
+      user: null,
+      isAuthenticated: false,
+      isLoading: false,
+      isInitialized: true,
+    });
+  };
+
+  const updateProfile = async (userData: Partial<User>): Promise<void> => {
+    console.log("🔄 [AuthContext] Calling updateProfile with:", userData);
+    try {
+      await authMutations.updateProfile.mutateAsync(userData);
+      console.log("✅ [AuthContext] updateProfile mutation completed");
+    } catch (error) {
+      console.error("❌ [AuthContext] updateProfile error:", error);
+      throw error;
+    }
+  };
+
+  const changePassword = async (
+    currentPassword: string,
+    newPassword: string
+  ): Promise<void> => {
+    await authMutations.changePassword.mutateAsync({
+      currentPassword,
+      newPassword,
+    });
+  };
+
+  const value: AuthContextType = {
+    user: authState.user,
+    isLoading: authState.isLoading,
+    isAuthenticated: authState.isAuthenticated,
+    login,
+    register,
+    logout,
+    updateProfile,
+    changePassword,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-export const useAuth = () => {
+export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within AuthProvider");
+  if (context === undefined) {
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };

@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const WhatsNew: React.FC = () => {
   const { t } = useLanguage();
@@ -30,12 +31,7 @@ export const WhatsNew: React.FC = () => {
     {}
   );
 
-  const currentUser = {
-    id: "69181ab1b5ad009032921d2a",
-    firstName: "Current",
-    lastName: "User",
-    email: "user@example.com",
-  };
+  const { user } = useAuth();
 
   // Fetch posts
   const {
@@ -45,7 +41,9 @@ export const WhatsNew: React.FC = () => {
   } = useQuery({
     queryKey: ["posts"],
     queryFn: async () => {
-      const response = await fetch(`${API}/api/sunday-school/posts`);
+      const response = await fetch(`${API}/api/sunday-school/posts`, {
+        credentials: "include",
+      });
       if (!response.ok) {
         throw new Error("Failed to fetch posts");
       }
@@ -62,7 +60,8 @@ export const WhatsNew: React.FC = () => {
       const commentsPromises = posts.map(async (post: any) => {
         try {
           const response = await fetch(
-            `${API}/api/sunday-school/comments/post/${post._id}`
+            `${API}/api/sunday-school/comments/post/${post._id}`,
+            { credentials: "include" }
           );
           if (!response.ok) {
             throw new Error(`Failed to fetch comments for post ${post._id}`);
@@ -101,6 +100,8 @@ export const WhatsNew: React.FC = () => {
     }) => {
       const response = await fetch(`${API}/api/sunday-school/comments`, {
         method: "POST",
+        credentials: "include",
+
         headers: {
           "Content-Type": "application/json",
         },
@@ -138,11 +139,14 @@ export const WhatsNew: React.FC = () => {
     }) => {
       const response = await fetch(
         `${API}/api/sunday-school/posts/${postId}/like`,
+
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
+          credentials: "include",
+
           body: JSON.stringify({ userId }),
         }
       );
@@ -200,8 +204,8 @@ export const WhatsNew: React.FC = () => {
 
     const commentData = {
       postId: postId,
-      author: `${currentUser.firstName} ${currentUser.lastName}`,
-      authorId: currentUser.id,
+      author: `${user?.firstName} ${user?.lastName}`,
+      authorId: user?._id,
       text: commentText,
     };
 
@@ -211,7 +215,7 @@ export const WhatsNew: React.FC = () => {
   };
 
   const handleLikePost = (postId: string, isCurrentlyLiked: boolean) => {
-    likePostMutation.mutate({ postId, userId: currentUser.id });
+    likePostMutation.mutate({ postId, userId: user?._id });
   };
 
   const toggleComments = (postId: string) => {
@@ -401,7 +405,7 @@ export const WhatsNew: React.FC = () => {
               <PostCard
                 key={post._id}
                 post={post}
-                currentUser={currentUser}
+                user={user}
                 comments={allComments[post._id] || []}
                 onUpdate={() => {}}
                 showActions={true}
@@ -438,7 +442,7 @@ export const WhatsNew: React.FC = () => {
               <PostCard
                 key={post._id}
                 post={post}
-                currentUser={currentUser}
+                user={user}
                 comments={allComments[post._id] || []}
                 onUpdate={() => {}}
                 showActions={true}

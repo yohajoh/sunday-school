@@ -6,7 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Select,
@@ -31,6 +37,7 @@ import {
 import { toast } from "sonner";
 import { Controller, useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface PostFormProps {
   post?: any;
@@ -46,7 +53,7 @@ export const PostForm: React.FC<PostFormProps> = ({
   mode = "create",
 }) => {
   const { t } = useLanguage();
-  const { currentUser } = useApp();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const API = import.meta.env.VITE_API_URL;
 
@@ -88,6 +95,8 @@ export const PostForm: React.FC<PostFormProps> = ({
 
       const response = await fetch(`${API}/api/sunday-school/upload/image`, {
         method: "POST",
+        credentials: "include",
+
         body: formData,
       });
 
@@ -140,6 +149,8 @@ export const PostForm: React.FC<PostFormProps> = ({
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include",
+
         body: JSON.stringify(postData),
       });
 
@@ -178,6 +189,8 @@ export const PostForm: React.FC<PostFormProps> = ({
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include",
+
         body: JSON.stringify(postData),
       });
 
@@ -303,7 +316,7 @@ export const PostForm: React.FC<PostFormProps> = ({
         return;
       }
 
-      if (!currentUser) {
+      if (!user) {
         toast.error(t("postForm.loginRequired"));
         return;
       }
@@ -331,7 +344,7 @@ export const PostForm: React.FC<PostFormProps> = ({
       const postData = {
         title: data.title,
         content: data.content,
-        authorId: "691819f6b5ad009032921d1e", // You might want to use currentUser.id here
+        authorId: user?._id, // You might want to use currentUser.id here
         category: data.category,
         status: data.status,
         publishDate: data.publishDate,

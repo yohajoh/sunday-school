@@ -24,11 +24,13 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const UserDashboard: React.FC = () => {
   const { t } = useLanguage();
-  const { posts, assets, users, currentUser } = useApp();
+  const { posts, assets } = useApp();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   // Get user-specific data
   const userPosts = posts.filter(
@@ -38,9 +40,7 @@ export const UserDashboard: React.FC = () => {
   );
 
   const recentPosts = userPosts.slice(0, 3);
-  const userAssets = assets.filter(
-    (asset) => asset.assignedTo === currentUser?.id
-  );
+  const userAssets = assets.filter((asset) => asset.assignedTo === user?._id);
 
   const stats = [
     {
@@ -174,7 +174,7 @@ export const UserDashboard: React.FC = () => {
                 </div>
                 <div className="flex-1">
                   <h1 className="text-2xl sm:text-4xl font-bold bg-gradient-to-r from-blue-200 to-emerald-200 bg-clip-text text-transparent">
-                    {t("userDashboard.welcomeBack")}
+                    {t("userDashboard.welcomeBack")} {user?.firstName}
                   </h1>
                   <p className="text-blue-100 text-sm sm:text-lg mt-2">
                     {t("userDashboard.welcomeMessage")}
@@ -208,7 +208,7 @@ export const UserDashboard: React.FC = () => {
                   <Church className="h-5 w-5 sm:h-6 sm:w-6 text-amber-400" />
                   <div className="min-w-0">
                     <p className="text-lg sm:text-2xl font-bold truncate">
-                      {currentUser?.church}
+                      {user?.church}
                     </p>
                     <p className="text-xs text-amber-200 truncate">
                       {t("userDashboard.yourChurch")}
@@ -222,8 +222,8 @@ export const UserDashboard: React.FC = () => {
             <div className="flex-shrink-0 self-center sm:self-auto">
               <Avatar className="h-16 w-16 sm:h-20 sm:w-20 border-4 border-white/20 shadow-2xl">
                 <AvatarFallback className="bg-gradient-to-br from-blue-500 to-emerald-500 text-white text-xl sm:text-2xl font-bold">
-                  {currentUser?.firstName?.[0]}
-                  {currentUser?.lastName?.[0]}
+                  {user?.firstName?.[0]}
+                  {user?.lastName?.[0]}
                 </AvatarFallback>
               </Avatar>
             </div>

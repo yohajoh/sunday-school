@@ -1,3 +1,4 @@
+// components/Signup.tsx
 import React from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -5,35 +6,33 @@ import { UserForm } from "@/components/forms/UserForm";
 import { User } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Church,
-  ArrowLeft,
-  Users,
-  Star,
-  Shield,
-  BookOpen,
-  Heart,
-} from "lucide-react";
+import { Church, ArrowLeft, BookOpen, Heart, Shield } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { useUserMutation } from "@/hooks/useUserMutations";
 
 export const Signup: React.FC = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
-  const { createUser } = useUserMutation();
-  const { setLoggedOut } = useAuth();
+  const { register, isLoading } = useAuth();
 
   const handleSubmit = async (userData: User) => {
-    createUser.mutate(userData, {
-      onSuccess: () => {
-        toast.success("Welcome to Sunday School!", {
-          description: "Your account has been created successfully.",
-        });
-        setLoggedOut("kjkljk");
-        navigate("/");
-      },
-    });
+    try {
+      // Add password to user data for registration
+      const registrationData = {
+        ...userData,
+      };
+
+      await register(registrationData);
+
+      toast.success("Welcome to Sunday School!", {
+        description: "Your account has been created successfully.",
+      });
+
+      navigate("/");
+    } catch (error) {
+      // Error is already handled in the mutation
+      console.error("Registration error:", error);
+    }
   };
 
   const handleCancel = () => {
@@ -158,6 +157,7 @@ export const Signup: React.FC = () => {
                     variant="ghost"
                     onClick={handleCancel}
                     className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                    disabled={isLoading}
                   >
                     <ArrowLeft className="h-4 w-4 mr-2" />
                     {t("signup.backToLogin")}
@@ -172,6 +172,7 @@ export const Signup: React.FC = () => {
                   mode="create"
                   onSave={handleSubmit}
                   onCancel={handleCancel}
+                  isLoading={isLoading}
                 />
               </CardContent>
             </Card>

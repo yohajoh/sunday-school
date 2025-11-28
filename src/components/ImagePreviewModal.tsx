@@ -135,8 +135,8 @@ export const ImagePreviewModal: React.FC<ImagePreviewModalProps> = ({
                     <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
                       <User className="h-4 w-4" />
                       <span>
-                        {gallery.uploadedBy.firstName}{" "}
-                        {gallery.uploadedBy.lastName}
+                        {gallery.uploadedBy?.firstName}{" "}
+                        {gallery.uploadedBy?.lastName}
                       </span>
                     </div>
                   </div>

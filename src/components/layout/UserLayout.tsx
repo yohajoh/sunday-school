@@ -87,11 +87,11 @@ export const UserLayout: React.FC = () => {
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 lg:w-12 lg:h-12 bg-gradient-to-br from-blue-500 to-emerald-500 rounded-xl flex items-center justify-center text-white font-semibold text-sm lg:text-lg shadow-lg">
                 {user?.firstName?.[0]}
-                {user?.lastName?.[0]}
+                {user?.middleName?.[0]}
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-slate-800 dark:text-white truncate text-sm lg:text-base">
-                  {user?.firstName} {user?.lastName}
+                  {user?.firstName} {user?.middleName}
                 </p>
                 <p className="text-xs text-slate-600 dark:text-slate-400 truncate">
                   {user?.studentId}
@@ -193,7 +193,7 @@ export const UserLayout: React.FC = () => {
               <div className="lg:hidden flex items-center gap-2">
                 <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-emerald-500 rounded-xl flex items-center justify-center text-white font-semibold text-sm">
                   {user?.firstName?.[0]}
-                  {user?.lastName?.[0]}
+                  {user?.middleName?.[0]}
                 </div>
               </div>
             </div>

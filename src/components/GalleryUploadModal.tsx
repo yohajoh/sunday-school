@@ -31,6 +31,8 @@ const useUploadGallery = () => {
         `${API}/api/sunday-school/admin/gallery/upload`,
         {
           method: "POST",
+          credentials: "include",
+
           body: formData,
         }
       );

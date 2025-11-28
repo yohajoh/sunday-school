@@ -32,6 +32,7 @@ interface UserFormProps {
   onSave: (user: User) => void;
   onCancel?: () => void;
   mode?: "create" | "edit";
+  isLoading: boolean;
 }
 
 export const UserForm: React.FC<UserFormProps> = ({
@@ -39,6 +40,7 @@ export const UserForm: React.FC<UserFormProps> = ({
   onSave,
   onCancel,
   mode = "create",
+  isLoading = false,
 }) => {
   const { t } = useLanguage();
 

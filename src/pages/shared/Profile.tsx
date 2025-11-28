@@ -1,34 +1,42 @@
 import React from "react";
-import { useApp } from "@/contexts/AppContext";
 import { ProfileForm } from "@/components/forms/ProfileForm";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, User, Shield, Crown, Sparkles } from "lucide-react";
+import { ArrowLeft, Shield, Crown, Sparkles } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { User } from "@/types/index";
 
+// pages/shared/Profile.tsx - Update the handleSaveProfile function
 export const Profile: React.FC = () => {
-  const { currentUser, updateUser } = useApp();
+  const { user, updateProfile } = useAuth(); // Use auth context
   const { t } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
 
   const isAdminRoute = location.pathname.startsWith("/admin");
 
-  const handleSaveProfile = (updatedUser: any) => {
-    updateUser(updatedUser.id, updatedUser);
+  const handleSaveProfile = async (updatedUserData: Partial<User>) => {
+    try {
+      await updateProfile(updatedUserData);
+      // The toast success is handled in the mutation
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      // Error is already handled in the mutation
+    }
   };
 
   const handleBack = () => {
     if (isAdminRoute) {
       navigate("/admin/dashboard");
     } else {
-      navigate("/");
+      navigate("/dashboard");
     }
   };
 
-  if (!currentUser) {
+  if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-orange-50/20 to-amber-50/30 dark:from-slate-900 dark:via-orange-950/10 dark:to-amber-950/5">
         <div className="text-center">
@@ -54,7 +62,7 @@ export const Profile: React.FC = () => {
                     {isAdminRoute ? (
                       <Crown className="h-6 w-6 sm:h-8 sm:w-8 text-orange-400" />
                     ) : (
-                      <User className="h-6 w-6 sm:h-8 sm:w-8 text-orange-400" />
+                      <Crown className="h-6 w-6 sm:h-8 sm:w-8 text-orange-400" />
                     )}
                   </div>
                   <div className="flex-1">
@@ -71,7 +79,7 @@ export const Profile: React.FC = () => {
                       </div>
                       <Badge className="bg-gradient-to-r from-orange-500 to-amber-500 text-white border-0 shadow-lg text-sm px-3 py-1">
                         <Sparkles className="h-3 w-3 mr-1" />
-                        {currentUser.role?.toUpperCase() || "USER"}
+                        {user.role?.toUpperCase() || "USER"}
                       </Badge>
                     </div>
                   </div>
@@ -89,10 +97,10 @@ export const Profile: React.FC = () => {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 sm:gap-3 bg-white/10 backdrop-blur-sm rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-white/20">
-                    <User className="h-4 w-4 sm:h-6 sm:w-6 text-amber-400 flex-shrink-0" />
+                    <Crown className="h-4 w-4 sm:h-6 sm:w-6 text-amber-400 flex-shrink-0" />
                     <div>
                       <p className="text-lg sm:text-2xl font-bold">
-                        {currentUser.firstName} {currentUser.lastName}
+                        {user.firstName} {user.middleName}
                       </p>
                       <p className="text-xs text-amber-200">Profile</p>
                     </div>
@@ -202,7 +210,7 @@ export const Profile: React.FC = () => {
                 </div>
               </div>
               <CardContent className="p-0">
-                <ProfileForm user={currentUser} onSave={handleSaveProfile} />
+                <ProfileForm user={user} onSave={handleSaveProfile} />
               </CardContent>
             </Card>
 
