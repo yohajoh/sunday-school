@@ -53,6 +53,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     queryFn: async (): Promise<User | null> => {
       try {
         const response = await fetch(`${API_BASE}/api/sunday-school/auth/me`, {
+          method: "GET",
           credentials: "include",
         });
 
@@ -113,9 +114,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const login = async (email: string, password: string): Promise<void> => {
     console.log("🔑 [AuthContext] Login initiated");
-    await authMutations.login.mutateAsync({ email, password });
-    // Refetch user data immediately after login
-    await queryClient.invalidateQueries({ queryKey: ["currentUser"] });
+    try {
+      await authMutations.login.mutateAsync({ email, password });
+      console.log("✅ [AuthContext] Login mutation completed");
+
+      // Add a small delay to ensure cookies are set
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      await queryClient.invalidateQueries({ queryKey: ["currentUser"] });
+
+      // Force refetch user data
+      await queryClient.refetchQueries({ queryKey: ["currentUser"] });
+      console.log("✅ [AuthContext] User refetched after login");
+    } catch (error) {
+      console.error("❌ [AuthContext] Login failed:", error);
+      throw error;
+    }
   };
 
   const register = async (userData: User): Promise<void> => {

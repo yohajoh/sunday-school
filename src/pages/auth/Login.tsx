@@ -71,33 +71,6 @@ export const Login: React.FC = () => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const demoLogin = async (isAdmin: boolean) => {
-    const demoCredentials = {
-      email: isAdmin ? "admin@sundayschool.org" : "user@church.org",
-      password: "password123", // Make sure this matches your demo users' passwords
-    };
-
-    setFormData({
-      ...demoCredentials,
-      rememberMe: false,
-    });
-
-    setIsLoading(true);
-    try {
-      await login(demoCredentials.email, demoCredentials.password);
-      toast.success(`Welcome ${isAdmin ? "Admin" : "Member"}!`, {
-        description: "Demo login successful.",
-      });
-      navigate(from, { replace: true });
-    } catch (error: any) {
-      toast.error("Demo login failed", {
-        description: "Please make sure demo users exist in the database.",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   // Combined loading state
   const isSubmitting = isLoading || authLoading;
 
