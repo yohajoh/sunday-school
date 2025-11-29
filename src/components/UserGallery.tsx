@@ -160,7 +160,7 @@ export const UserGallery: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-orange-50/20 to-amber-50/30 dark:from-slate-900 dark:via-orange-950/10 dark:to-amber-950/5">
-      <div className="space-y-6 p-3">
+      <div className="space-y-6 p-3 sm:p-0">
         {/* Premium Hero Section - Mobile Optimized */}
         <div className="relative overflow-hidden rounded-2xl lg:rounded-3xl bg-gradient-to-br from-slate-800 via-orange-900 to-amber-900 p-6 sm:p-8 text-white border border-orange-500/20 lg:mx-0">
           <div className="relative z-10 text-center flex justify-between">
