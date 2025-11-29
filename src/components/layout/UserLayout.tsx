@@ -172,7 +172,7 @@ export const UserLayout: React.FC = () => {
           {/* Footer Actions */}
           <div className="p-3 border-t border-gray-100 dark:border-gray-800 space-y-2">
             {/* Language Switcher - Mobile visible in sidebar */}
-            <div className="sm:hidden">
+            <div className="sm:visible">
               <LanguageSwitcher variant="full" />
             </div>
 
