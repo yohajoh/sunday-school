@@ -172,9 +172,9 @@ export const UserLayout: React.FC = () => {
           {/* Footer Actions */}
           <div className="p-3 border-t border-gray-100 dark:border-gray-800 space-y-2">
             {/* Language Switcher - Mobile visible in sidebar */}
-            <div className="sm:visible">
+            {/* <div className="sm:hidden">
               <LanguageSwitcher variant="full" />
-            </div>
+            </div> */}
 
             {/* Logout Button */}
             {!sidebarCollapsed && (
@@ -238,8 +238,12 @@ export const UserLayout: React.FC = () => {
               </div>
 
               {/* Language Switcher - Desktop only */}
-              <div className="hidden sm:block">
+              {/* <div className="hidden sm:block">
                 <LanguageSwitcher variant="icon" />
+              </div> */}
+
+              <div className="sm:hidden">
+                <LanguageSwitcher variant="full" />
               </div>
 
               {/* Theme Toggle */}
