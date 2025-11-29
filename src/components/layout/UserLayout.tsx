@@ -39,7 +39,7 @@ export const UserLayout: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-gray-950">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
       {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
         <div
@@ -62,7 +62,7 @@ export const UserLayout: React.FC = () => {
           {/* Header with close button for mobile */}
           <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700 lg:p-6">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-br from-blue-500 to-emerald-500 rounded-xl shadow-lg">
+              <div className="p-2 bg-gradient-to-br from-slate-800 to-slate-600 dark:from-slate-700 dark:to-slate-900 rounded-xl shadow-lg">
                 <Church className="h-6 w-6 text-white" />
               </div>
               <div className="hidden lg:block">
@@ -85,7 +85,7 @@ export const UserLayout: React.FC = () => {
           {/* User Info */}
           <div className="p-4 border-b border-slate-200 dark:border-slate-700 lg:p-6">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 lg:w-12 lg:h-12 bg-gradient-to-br from-blue-500 to-emerald-500 rounded-xl flex items-center justify-center text-white font-semibold text-sm lg:text-lg shadow-lg">
+              <div className="w-10 h-10 lg:w-12 lg:h-12 bg-gradient-to-br from-slate-700 to-slate-800 dark:from-slate-600 dark:to-slate-700 rounded-xl flex items-center justify-center text-white font-semibold text-sm lg:text-lg shadow-lg">
                 {user?.firstName?.[0]}
                 {user?.middleName?.[0]}
               </div>
@@ -116,7 +116,7 @@ export const UserLayout: React.FC = () => {
                     w-full flex items-center gap-3 px-3 py-3 lg:px-4 rounded-2xl text-left transition-all duration-300 text-sm lg:text-base
                     ${
                       active
-                        ? "bg-gradient-to-r from-blue-500 to-emerald-500 text-white shadow-lg"
+                        ? "bg-gradient-to-r from-slate-800 to-slate-700 text-white shadow-lg"
                         : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white"
                     }
                   `}
@@ -133,7 +133,7 @@ export const UserLayout: React.FC = () => {
             <Button
               variant="outline"
               onClick={logout}
-              className="w-full border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl text-sm"
+              className="w-full border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl text-sm"
             >
               <LogOut className="h-4 w-4 mr-2" />
               {t("auth.logout")}
@@ -191,7 +191,7 @@ export const UserLayout: React.FC = () => {
 
               {/* User Avatar for header (mobile) */}
               <div className="lg:hidden flex items-center gap-2">
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-emerald-500 rounded-xl flex items-center justify-center text-white font-semibold text-sm">
+                <div className="w-8 h-8 bg-gradient-to-br from-slate-700 to-slate-800 rounded-xl flex items-center justify-center text-white font-semibold text-sm">
                   {user?.firstName?.[0]}
                   {user?.middleName?.[0]}
                 </div>
