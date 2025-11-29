@@ -37,7 +37,9 @@ export const UserLayout: React.FC = () => {
   ];
 
   const isActive = (path: string) => {
-    if (path === "/") return location.pathname === "/";
+    if (path === "/") {
+      return location.pathname === "/";
+    }
     return location.pathname.startsWith(path);
   };
 
@@ -77,7 +79,7 @@ export const UserLayout: React.FC = () => {
                 <Church className="h-5 w-5 text-white" />
               </div>
               {!sidebarCollapsed && (
-                <div>
+                <div className="font-sans">
                   <h1 className="text-lg font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
                     Sunday School
                   </h1>
@@ -107,7 +109,7 @@ export const UserLayout: React.FC = () => {
                   </div>
                   <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white dark:border-gray-900 shadow-sm"></div>
                 </div>
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0 font-sans">
                   <p className="font-semibold text-gray-900 dark:text-white truncate text-sm">
                     {user?.firstName} {user?.middleName}
                   </p>
@@ -158,7 +160,9 @@ export const UserLayout: React.FC = () => {
                     <Icon className="h-5 w-5" />
                   </div>
                   {!sidebarCollapsed && (
-                    <span className="font-medium text-sm">{item.name}</span>
+                    <span className="font-medium text-sm font-sans">
+                      {item.name}
+                    </span>
                   )}
                 </button>
               );
@@ -171,7 +175,7 @@ export const UserLayout: React.FC = () => {
               <Button
                 variant="outline"
                 onClick={logout}
-                className="w-full border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:border-gray-400 dark:hover:border-gray-500 rounded-xl py-2.5 text-sm font-medium transition-all duration-300"
+                className="w-full border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:border-gray-400 dark:hover:border-gray-500 rounded-xl py-2.5 text-sm font-medium transition-all duration-300 font-sans"
               >
                 <LogOut className="h-4 w-4 mr-2" />
                 {t("auth.logout")}
@@ -211,7 +215,7 @@ export const UserLayout: React.FC = () => {
               </button>
 
               <div>
-                <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+                <h1 className="text-xl font-bold text-gray-900 dark:text-white font-sans">
                   {navigation.find((item) => isActive(item.href))?.name ||
                     "Dashboard"}
                 </h1>
@@ -222,7 +226,7 @@ export const UserLayout: React.FC = () => {
               {/* Church Info */}
               <div className="hidden md:flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
                 <div className="w-2 h-2 bg-emerald-500 rounded-full ring-1 ring-emerald-200 dark:ring-emerald-900"></div>
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300 max-w-32 truncate">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300 max-w-32 truncate font-sans">
                   {user?.church}
                 </span>
               </div>
