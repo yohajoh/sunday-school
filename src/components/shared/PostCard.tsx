@@ -171,7 +171,7 @@ export const PostCard: React.FC<PostCardProps> = ({
   const audienceInfo = getAudienceBadge(post.targetAudience);
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-lg hover:shadow-xl transition-all duration-300 group overflow-hidden w-full max-w-2xl mx-auto">
+    <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-lg hover:shadow-xl transition-all duration-300 group overflow-hidden h-fit">
       {/* Header */}
       <div className="p-4 border-b border-slate-200 dark:border-slate-700">
         <div className="flex items-start justify-between gap-3">
@@ -187,11 +187,11 @@ export const PostCard: React.FC<PostCardProps> = ({
             </Avatar>
             <div className="flex-1 min-w-0">
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
-                <h3 className="font-semibold text-slate-800 dark:text-white text-base group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">
+                <h3 className="font-semibold text-slate-800 dark:text-white text-base group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-2">
                   {post.title}
                 </h3>
                 {post.isPinned && (
-                  <Badge className="bg-amber-500 text-white border-0 shadow-sm text-xs w-fit">
+                  <Badge className="bg-amber-500 text-white border-0 shadow-sm text-xs w-fit flex-shrink-0">
                     <Pin className="h-3 w-3 mr-1" />
                     Pinned
                   </Badge>
@@ -245,7 +245,7 @@ export const PostCard: React.FC<PostCardProps> = ({
       {/* Content */}
       <div className="p-4">
         <div className="prose prose-slate dark:prose-invert max-w-none">
-          <p className="text-slate-700 dark:text-slate-300 leading-relaxed text-base whitespace-pre-wrap break-words">
+          <p className="text-slate-700 dark:text-slate-300 leading-relaxed text-base whitespace-pre-wrap break-words line-clamp-4">
             {post.content}
           </p>
         </div>
@@ -255,7 +255,7 @@ export const PostCard: React.FC<PostCardProps> = ({
             <img
               src={post.image}
               alt={post.title}
-              className="w-full h-auto max-w-full object-scale-down bg-slate-50 dark:bg-slate-900 rounded-lg"
+              className="w-full h-48 object-cover hover:scale-105 transition-transform duration-300 rounded-lg"
             />
           </div>
         )}
